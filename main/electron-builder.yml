@@ -1,6 +1,7 @@
 publish:
   - "github"
-productName: "Exiled Exchange 2"
+appId: "com.skekdi4561.poe2-appraiser"
+productName: "POE2 시세 감정소"
 npmRebuild: false
 files:
   - "package.json"

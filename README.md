@@ -1,50 +1,26 @@
-# ![Perfect Jewelers Orb](./renderer/public/images/jeweler.png) Exiled Exchange 2
+# POE2 시세 감정소 (오버레이)
 
-[![GitHub Downloads (specific asset, latest release)](https://img.shields.io/github/downloads/kvan7/exiled-exchange-2/latest/Exiled-Exchange-2-Setup-0.15.8.exe?style=plastic&link=https%3A%2F%2Ftooomm.github.io%2Fgithub-release-stats%2F%3Fusername%3Dkvan7%26repository%3DExiled-Exchange-2)](https://tooomm.github.io/github-release-stats/?username=kvan7&repository=Exiled-Exchange-2)
-[![GitHub Tag](https://img.shields.io/github/v/tag/kvan7/exiled-exchange-2?style=plastic&label=latest%20version)](https://github.com/Kvan7/Exiled-Exchange-2/releases/latest)
-[![GitHub commits since latest release (branch)](https://img.shields.io/github/commits-since/kvan7/exiled-exchange-2/latest/dev?style=plastic)](https://github.com/Kvan7/Exiled-Exchange-2/commits/dev/)
-[![Translation status](https://translate.codeberg.org/widget/exiled-exchange-2/svg-badge.svg)](https://translate.codeberg.org/engage/exiled-exchange-2/)
+**"이 예산으로 살 수 있는 최고 DPS는?"** — 시장 곡선으로 답하는 POE2 오버레이.
 
-Path of Exile 2 overlay program for price checking items, among many other loved features.
+[Exiled Exchange 2](https://github.com/Kvan7/Exiled-Exchange-2)
+(Awakened PoE Trade 의 POE2 포크, MIT)를 기반으로 한 포크이며,
+**시장 곡선 판정** 기능을 얹었습니다:
 
-Fork of [Awakened PoE Trade](https://github.com/SnosMe/awakened-poe-trade).
+- 활 가격 체크 시 "이 DPS 시장 최저가 / 한 계단 위 가격"을 즉시 판정
+- 데이터는 [활 시세 감정소](https://skekdi4561.github.io/poe2-bow/)의
+  24시간 합집합 스냅샷 (즉시 구매 가능 매물만 집계)
+- 원본의 전 아이템 가격 체크·오버레이·카카오 렐름/한국어 지원은 그대로
 
-The ONLY official download sites are <https://kvan7.github.io/Exiled-Exchange-2/download> or <https://github.com/Kvan7/Exiled-Exchange-2/releases>, any other locations are not official and may be malicious.
+## 투명성 고지
 
-## Moving from POE1/Awakened PoE Trade
+- 이 포크는 **AI(Claude) 페어 프로그래밍으로 개발**됩니다. 원본 프로젝트의
+  기여 정책(AI 코드 금지)을 존중해 업스트림에 PR 을 보내지 않습니다.
+- 원본 저작권 및 MIT 라이선스는 LICENSE 에 그대로 유지됩니다.
+- 게임 클라이언트·메모리·파일에 접촉하지 않습니다 (원본과 동일한 원칙).
 
-1. Download latest release from [releases](https://github.com/Kvan7/exiled-exchange-2/releases)
-2. Run installer
-3. Run Exiled Exchange 2
-4. Launch PoE2 to generate correct files
-5. Quit PoE2 and EE2 after seeing the banner popup that EE2 loaded
-6. Copy `apt-data` from `%APPDATA%\awakened-poe-trade` to `%APPDATA%\exiled-exchange-2` to copy your previous settings
-  - Resulting directory structure should look like this:
-  - `%APPDATA%\exiled-exchange-2\apt-data\`
-    - `config.json`
-7. Edit `config.json` and change the value of "windowTitle": "Path of Exile" to instead be "Path of Exile 2", otherwise it will open only for poe1
-8. Start Exiled Exchange 2 and PoE2
+## 빌드
 
-## FAQ
-
-<https://kvan7.github.io/Exiled-Exchange-2/faq>
-
-## Tool showcase
-
-| Gem                                                | Rare                                                 | Unique                                                   | Currency                                                     |
-| -------------------------------------------------- | ---------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------ |
-| ![Gem Check](./docs/reference-images/GemCheck.png) | ![Rare Check](./docs/reference-images/RareCheck.png) | ![Unique Check](./docs/reference-images/UniqueCheck.png) | ![Currency Check](./docs/reference-images/CurrencyCheck.png) |
-
-### Development
-
-See [DEVELOPING.md](./DEVELOPING.md)
-
-### Acknowledgments
-
-- [awakened-poe-trade](https://github.com/SnosMe/awakened-poe-trade)
-- [libuiohook](https://github.com/kwhat/libuiohook)
-- [RePoE](https://github.com/brather1ng/RePoE)
-- [poeprices.info](https://www.poeprices.info/)
-- [poe.ninja](https://poe.ninja/)
-
-![graph](https://i.imgur.com/MATqhv7.png)
+```
+cd renderer && npm install && npm run make-index-files && npm run build
+cd ../main  && npm install && npm run build && npm run package
+```
