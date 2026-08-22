@@ -1,6 +1,8 @@
 <template>
   <div v-if="noUniqueSelection" class="p-4 layout-column min-h-0">
     <filter-name :filters="itemFilters" :item="item" />
+    <!-- 활 시세 감정소: 활이면 시장 곡선 위치를 먼저 보여준다 (이 포크의 차별화) -->
+    <market-curve v-if="item.category === 'Bow'" :item="item" />
     <!-- <price-prediction v-if="showPredictedPrice" class="mb-4" :item="item" /> -->
     <!-- <price-trend v-else :item="item" :filters="itemFilters" /> -->
     <price-trend :item="item" :filters="itemFilters" />
@@ -81,6 +83,7 @@ import PriceTrend from "./trends/PriceTrend.vue";
 import FiltersBlock from "./filters/FiltersBlock.vue";
 import { createPresets } from "./filters/create-presets";
 import PricePrediction from "./price-prediction/PricePrediction.vue";
+import MarketCurve from "./market-curve/MarketCurve.vue";
 import StackValue from "./stack-value/StackValue.vue";
 import FilterName from "./filters/FilterName.vue";
 import Tip from "../help/Tip.vue";
@@ -102,6 +105,7 @@ export default defineComponent({
   emits: ["item-editor-selection"],
   components: {
     PricePrediction,
+    MarketCurve,
     TradeListing,
     TradeBulk,
     TradeLinks,
