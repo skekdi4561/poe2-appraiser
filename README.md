@@ -24,3 +24,16 @@
 cd renderer && npm install && npm run make-index-files && npm run build
 cd ../main  && npm install && npm run build && npm run package
 ```
+
+## 데이터 수집 고지 (크라우드 표본)
+
+이 앱은 **당신이 직접 실행한 활 가격 검색**의 거래소 응답에서 활 매물의 공개 정보만
+(매물 id, DPS, 가격, 옵션 문구) 추려 익명으로 수합 서버에 보냅니다. 모인 표본은
+[활 시세 감정소](https://skekdi4561.github.io/poe2-bow/)의 시장 곡선이 되어 모든
+사용자에게 돌아갑니다.
+
+- 추가 거래소 API 호출은 없습니다 — 이미 화면에 도착한 응답을 재활용할 뿐입니다
+- 판매자 계정명 등 개인 정보는 수집하지 않습니다
+- 카카오 스탠다드 리그 활 검색에만 작동합니다
+- 끄고 싶으면: `renderer/src/web/price-check/market-curve/harvest.ts` 의
+  `HARVEST_URL` 을 빈 문자열로 바꿔 빌드하면 됩니다

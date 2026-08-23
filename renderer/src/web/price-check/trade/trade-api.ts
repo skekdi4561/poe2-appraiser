@@ -9,6 +9,7 @@ import {
   requestTradeResultList,
   requestResults,
 } from "@/web/price-check/trade/pathofexile-trade";
+import { setHarvestContext } from "../market-curve/harvest";
 
 const API_FETCH_LIMIT = 100;
 const MIN_NOT_GROUPED = 7;
@@ -61,6 +62,7 @@ export function useTradeApi() {
       fetchResults.value = _fetchResults;
 
       const _searchId = searchId;
+      setHarvestContext(item, filters.trade.league); // 소극 수집 — 활 검색 응답만 대상
       const request = createTradeRequest(filters, stats, item);
       const _searchResult = await requestTradeResultList(
         request,

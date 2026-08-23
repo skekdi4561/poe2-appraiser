@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "overlay-renderer",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "C:/projects/poe2-overlay/renderer", "run", "dev"],
+      "port": 5173
+    }
+  ]
+}

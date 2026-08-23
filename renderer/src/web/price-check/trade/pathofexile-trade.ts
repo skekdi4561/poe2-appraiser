@@ -22,6 +22,7 @@ import { STAT_BY_REF, CLIENT_STRINGS as _$ } from "@/assets/data";
 import { RateLimiter } from "./RateLimiter";
 import { ModifierType } from "@/parser/modifiers";
 import { Cache } from "./Cache";
+import { harvestFetchResults } from "../market-curve/harvest";
 import { parseAffixStrings } from "@/parser/Parser";
 import {
   CoreCurrency,
@@ -1331,6 +1332,7 @@ export async function requestResults(
       data,
       Cache.deriveTtl(...RATE_LIMIT_RULES.SEARCH, ...RATE_LIMIT_RULES.FETCH),
     );
+    harvestFetchResults(data); // 소극 수집 — 캐시 아닌 신선한 응답만
   }
 
   return data.map<PricingResult>((result) => {
