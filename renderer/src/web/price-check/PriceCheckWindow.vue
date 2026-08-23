@@ -228,11 +228,12 @@ export default defineComponent({
         lockedInitialSearch: true,
         activateStockFilter: false,
         builtinBrowser: false,
-        // 포크 기본값: POE2 는 WASD 조작이 대세 — Ctrl+D 는 이동키(D)와 충돌한다.
-        // 수식키+펑션키 조합은 어떤 이동·스킬 키와도 안 겹친다. 설정에서 언제든 변경 가능.
-        hotkey: "F6",
+        // 포크 기본값: Ctrl+X — 새끼(Ctrl)+검지(X) 한 손 조합, WASD 에서 손을 안 뗀다.
+        // globalShortcut 이 게임 창 활성 시에만 등록되고 키를 삼키므로 X(무기 스왑)도,
+        // 다른 앱의 잘라내기도 안 건드린다. 설정에서 언제든 변경 가능.
+        hotkey: "X",
         hotkeyHold: "Ctrl",
-        hotkeyLocked: "Ctrl + Alt + F6",
+        hotkeyLocked: "Ctrl + Alt + X",
         showSeller: false,
         searchStatRange: 10,
         showCursor: true,
