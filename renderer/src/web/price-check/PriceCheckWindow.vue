@@ -228,12 +228,13 @@ export default defineComponent({
         lockedInitialSearch: true,
         activateStockFilter: false,
         builtinBrowser: false,
-        // 포크 기본값: Ctrl+X — 새끼(Ctrl)+검지(X) 한 손 조합, WASD 에서 손을 안 뗀다.
-        // globalShortcut 이 게임 창 활성 시에만 등록되고 키를 삼키므로 X(무기 스왑)도,
-        // 다른 앱의 잘라내기도 안 건드린다. 설정에서 언제든 변경 가능.
-        hotkey: "X",
+        // 기본값 Ctrl+D (원본 관례 유지 — 사용자 결정). 주의: globalShortcut 의 키 삼킴은
+        // 메시지 큐까지만이고 게임은 raw input 으로 키 상태를 직접 읽으므로, 일반 키는
+        // 게임에 그대로 샌다(Ctrl+X 로 무기 스왑이 터진 실측). 자기 키 배치에 맞는 조합은
+        // 설정에서 각자 바꾸는 것이 정답.
+        hotkey: "D",
         hotkeyHold: "Ctrl",
-        hotkeyLocked: "Ctrl + Alt + X",
+        hotkeyLocked: "Ctrl + Alt + D",
         showSeller: false,
         searchStatRange: 10,
         showCursor: true,
