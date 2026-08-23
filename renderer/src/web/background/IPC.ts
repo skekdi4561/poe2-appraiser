@@ -21,6 +21,11 @@ class HostTransport {
     this.onEvent("MAIN->CLIENT::updater-state", (info) => {
       this.updateInfo.value = info;
     });
+    if (!this.isElectron) {
+      // 브라우저 단독 미리보기 — 메인 프로세스가 없어 WS 를 붙일 수 없다.
+      // 소켓 없이 부팅한다 (sendEvent 는 조용히 무시됨).
+      return;
+    }
     await new Promise((resolve) => {
       this.socket = new Sockette(`ws://${window.location.host}/events`, {
         onmessage: (e) => {
@@ -40,6 +45,7 @@ class HostTransport {
   }
 
   sendEvent(event: IpcEvent) {
+    if (!this.socket) return; // 웹 미리보기 — 보낼 곳이 없다
     this.socket.send(JSON.stringify(event));
   }
 
@@ -86,6 +92,9 @@ class HostTransport {
   };
 
   get isElectron() {
+    // ?web-preview 는 브라우저 검증용 강제 웹 모드 — Electron 기반 브라우저(예:
+    // Claude 패널)에서도 미리보기가 되게 한다. 실제 앱은 이 쿼리를 절대 안 붙인다.
+    if (window.location.search.includes("web-preview")) return false;
     return navigator.userAgent.includes("Electron");
   }
 }

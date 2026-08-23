@@ -1,37 +1,37 @@
 <template>
   <Widget :config="config" move-handles="center" :inline-edit="false">
     <div
-      class="widget-default-style p-4 text-gray-100 rounded-lg"
-      style="width: 36rem"
+      class="widget-default-style p-5 text-gray-100 rounded-lg"
+      style="width: 48rem"
     >
       <!-- 헤더 -->
       <div class="flex items-baseline justify-between mb-3">
-        <span class="font-bold text-base"
+        <span class="font-bold text-lg"
           ><span class="text-yellow-500">활 시세</span> 감정소</span
         >
-        <span v-if="board" class="text-xs text-gray-400"
+        <span v-if="board" class="text-sm text-gray-400"
           >매물 {{ filtered.length }}/{{ board.sample }}개 ·
           {{ board.ageHours < 1 ? "방금 전" : Math.round(board.ageHours) + "시간 전"
           }}<template v-if="board.rateFallback"> · 환율 일부 기본값</template></span
         >
       </div>
 
-      <div v-if="loading" class="text-gray-400 text-sm py-10 text-center">
+      <div v-if="loading" class="text-gray-400 py-12 text-center">
         시세 불러오는 중…
       </div>
-      <div v-else-if="!board" class="text-gray-400 text-sm py-10 text-center">
+      <div v-else-if="!board" class="text-gray-400 py-12 text-center">
         시세 데이터를 불러오지 못했습니다
       </div>
 
       <template v-else>
         <!-- 지표 · 예산 -->
-        <div class="flex items-center gap-2 mb-3 text-sm">
+        <div class="flex items-center gap-2 mb-3">
           <div class="flex bg-gray-900 rounded p-0.5">
             <button
               v-for="m in metrics"
               :key="m.id"
               @click="metric = m.id"
-              class="px-2.5 py-0.5 rounded"
+              class="px-3 py-1 rounded"
               :class="
                 metric === m.id
                   ? 'bg-gray-600 text-white font-medium'
@@ -41,24 +41,31 @@
               {{ m.label }}
             </button>
           </div>
-          <span class="ml-2 text-gray-400">예산</span>
+          <span class="ml-3 text-gray-400">예산</span>
           <input
             v-model.number="budget"
             type="number"
             min="0"
             placeholder="0"
-            class="bg-gray-900 rounded px-2 py-0.5 w-20 text-right"
+            class="bg-gray-900 rounded px-2 py-1 w-24 text-right"
             style="font-variant-numeric: tabular-nums"
           />
-          <span class="text-gray-400">ex</span>
+          <select
+            v-model="budgetCur"
+            class="bg-gray-900 rounded px-2 py-1 text-gray-200"
+          >
+            <option v-for="c in currencies" :key="c.id" :value="c.id">
+              {{ c.label }}
+            </option>
+          </select>
           <span v-if="best" class="ml-auto"
             >이 예산 최고 DPS
-            <span class="font-bold text-teal-400">{{ Math.round(best.d) }}</span
-            > · {{ formatEx(best.p, board.rates) }}</span
+            <span class="font-bold text-teal-400 text-lg">{{
+              Math.round(best.d)
+            }}</span>
+            · {{ formatEx(best.p, board.rates) }}</span
           >
-          <span
-            v-else-if="typeof budget === 'number' && budget > 0"
-            class="ml-auto text-gray-500"
+          <span v-else-if="budgetEx > 0" class="ml-auto text-gray-500"
             >예산 내 매물 없음</span
           >
         </div>
@@ -68,13 +75,13 @@
           <canvas
             ref="canvasEl"
             class="w-full rounded border border-gray-700 bg-gray-900"
-            style="height: 16rem"
+            style="height: 20rem"
             @mousemove="onHover"
             @mouseleave="hover = null"
           ></canvas>
           <div
             v-if="hover"
-            class="absolute pointer-events-none bg-gray-950 border border-gray-600 rounded px-2 py-1 text-xs shadow-lg"
+            class="absolute pointer-events-none bg-gray-950 border border-gray-600 rounded px-2 py-1 text-sm shadow-lg"
             :style="{ left: hover.left + 'px', top: hover.top + 'px' }"
             style="font-variant-numeric: tabular-nums"
           >
@@ -85,90 +92,134 @@
           </div>
         </div>
 
-        <!-- 조건 칩 (다중 선택) -->
-        <div class="mb-3">
-          <div class="flex items-center justify-between mb-1.5">
-            <span
-              class="text-gray-500"
-              style="font-size: 11px; letter-spacing: 0.05em"
-              >조건 — 겹쳐서 선택 가능</span
+        <!-- 아래 2단: 조건 필터 | 최전선 표 -->
+        <div class="flex gap-4">
+          <!-- 조건 필터 (거래소식 자유 필터) -->
+          <div class="flex-1 min-w-0">
+            <div
+              class="text-gray-500 mb-1.5"
+              style="font-size: 12px; letter-spacing: 0.05em"
             >
+              조건 필터 — 옵션을 검색해 추가하고 수치를 직접 입력
+            </div>
+
+            <!-- 옵션 검색 -->
+            <div class="relative mb-2">
+              <input
+                v-model="query"
+                @focus="showDrop = true"
+                @blur="hideDropSoon"
+                type="text"
+                placeholder="+ 옵션 검색 (예: 치명타, 생명력, 화살)"
+                class="w-full bg-gray-900 rounded px-3 py-1.5 border border-gray-700 focus:border-gray-500"
+              />
+              <div
+                v-if="showDrop && matchedStats.length"
+                class="absolute z-10 mt-1 w-full max-h-56 overflow-y-auto bg-gray-950 border border-gray-600 rounded shadow-lg"
+              >
+                <button
+                  v-for="s in matchedStats"
+                  :key="s.key"
+                  @mousedown.prevent="addFilter(s)"
+                  class="w-full text-left px-3 py-1.5 hover:bg-gray-800 flex justify-between gap-2"
+                >
+                  <span class="truncate">{{ s.key }}</span>
+                  <span class="text-gray-500 whitespace-nowrap text-sm"
+                    >{{ s.n }}개 · {{ s.lo }}~{{ s.hi }}</span
+                  >
+                </button>
+              </div>
+            </div>
+
+            <!-- 추가된 필터 행들 -->
+            <div v-if="!filters.length" class="text-gray-600 text-sm py-2">
+              필터 없음 — 전체 매물 기준
+            </div>
+            <div
+              v-for="(f, i) in filters"
+              :key="f.key + i"
+              class="flex items-center gap-2 mb-1.5 bg-gray-900 rounded px-2 py-1.5 border border-gray-800"
+            >
+              <span class="flex-1 truncate" :title="f.key">{{ f.key }}</span>
+              <input
+                v-model.number="f.min"
+                type="number"
+                placeholder="최소"
+                class="w-20 bg-gray-950 rounded px-2 py-0.5 text-right border border-gray-700"
+                style="font-variant-numeric: tabular-nums"
+              />
+              <span class="text-gray-600">~</span>
+              <input
+                v-model.number="f.max"
+                type="number"
+                placeholder="최대"
+                class="w-20 bg-gray-950 rounded px-2 py-0.5 text-right border border-gray-700"
+                style="font-variant-numeric: tabular-nums"
+              />
+              <button
+                @click="filters.splice(i, 1)"
+                class="text-gray-500 hover:text-red-400 px-1"
+                title="제거"
+              >
+                ✕
+              </button>
+            </div>
             <button
-              v-if="picked.size"
-              @click="picked.clear()"
-              class="text-xs text-gray-400 hover:text-gray-200 underline"
+              v-if="filters.length"
+              @click="filters.splice(0)"
+              class="text-sm text-gray-400 hover:text-gray-200 underline"
             >
               전체 해제
             </button>
           </div>
-          <div class="flex flex-wrap gap-1 overflow-y-auto" style="max-height: 6rem">
-            <button
-              v-for="c in board.conds"
-              :key="c.key + '|' + c.min"
-              @click="toggleCond(c)"
-              class="px-2 py-0.5 rounded text-xs border"
-              :class="
-                picked.has(c.key + '|' + c.min)
-                  ? 'bg-yellow-600 border-yellow-500 text-gray-900 font-medium'
-                  : 'bg-gray-900 border-gray-700 text-gray-300 hover:border-gray-500'
-              "
-            >
-              {{ c.label }}
+
+          <!-- 최전선 표 -->
+          <div style="width: 15rem">
+            <div class="flex items-center justify-between mb-1.5">
               <span
-                :class="
-                  picked.has(c.key + '|' + c.min)
-                    ? 'text-yellow-900'
-                    : 'text-gray-500'
-                "
-                >{{ c.n }}</span
+                class="text-gray-500"
+                style="font-size: 12px; letter-spacing: 0.05em"
+                >가격 최전선</span
               >
-            </button>
+              <button
+                @click="sortDesc = !sortDesc"
+                class="text-sm text-gray-400 hover:text-gray-200 underline"
+              >
+                {{ sortDesc ? "DPS 높은 순" : "DPS 낮은 순" }}
+              </button>
+            </div>
+            <div
+              class="overflow-y-auto rounded border border-gray-700 bg-gray-900"
+              style="max-height: 15rem"
+            >
+              <table
+                class="w-full"
+                style="font-variant-numeric: tabular-nums"
+              >
+                <tbody>
+                  <tr v-if="front.length < 2">
+                    <td colspan="2" class="text-gray-500 text-center py-3 text-sm">
+                      이 조건은 매물이 부족합니다
+                    </td>
+                  </tr>
+                  <tr
+                    v-for="(r, i) in rungs"
+                    :key="i"
+                    class="border-b border-gray-800 last:border-0 hover:bg-gray-800"
+                    :class="{ 'text-teal-400 font-bold': best && r.d === best.d }"
+                  >
+                    <td class="py-1 px-2">{{ Math.round(r.d) }}</td>
+                    <td class="py-1 px-2 text-right">
+                      {{ formatEx(r.p, board.rates) }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
-        <!-- 최전선 표 -->
-        <div class="flex items-center justify-between mb-1.5">
-          <span
-            class="text-gray-500"
-            style="font-size: 11px; letter-spacing: 0.05em"
-            >가격 최전선 — 이 DPS 를 사는 최저가</span
-          >
-          <button
-            @click="sortDesc = !sortDesc"
-            class="text-xs text-gray-400 hover:text-gray-200 underline"
-          >
-            {{ sortDesc ? "DPS 높은 순" : "DPS 낮은 순" }}
-          </button>
-        </div>
-        <div
-          class="overflow-y-auto rounded border border-gray-700 bg-gray-900"
-          style="max-height: 9rem"
-        >
-          <table
-            class="w-full text-sm"
-            style="font-variant-numeric: tabular-nums"
-          >
-            <tbody>
-              <tr v-if="front.length < 2">
-                <td colspan="2" class="text-gray-500 text-center py-3">
-                  이 조건 조합은 매물이 부족합니다
-                </td>
-              </tr>
-              <tr
-                v-for="(r, i) in rungs"
-                :key="i"
-                class="border-b border-gray-800 last:border-0 hover:bg-gray-800"
-                :class="{ 'text-teal-400 font-bold': best && r.d === best.d }"
-              >
-                <td class="py-0.5 px-2">{{ Math.round(r.d) }}</td>
-                <td class="py-0.5 px-2 text-right">
-                  {{ formatEx(r.p, board.rates) }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="text-xs text-gray-500 mt-2">
+        <div class="text-sm text-gray-500 mt-3">
           희귀 활 즉시구매 매물 기준 · 24시간 이내 수집분 · 가격축 로그 스케일
         </div>
       </template>
@@ -195,9 +246,10 @@ import {
   marketBoard,
   frontier,
   formatEx,
-  meetsAll,
+  matchesFilters,
   MarketBoard,
-  CondChip,
+  StatOption,
+  StatFilter,
   Row,
 } from "./appraiser";
 
@@ -227,6 +279,11 @@ export default defineComponent({
   setup(props) {
     const wm = inject<WidgetManager>("wm")!;
 
+    // 브라우저 미리보기 전용 훅 — ?web-preview&show-curve 로 열면 즉시 표시
+    if (!Host.isElectron && window.location.search.includes("show-curve")) {
+      wm.show(props.config.wmId);
+    }
+
     Host.onEvent("MAIN->CLIENT::widget-action", (e) => {
       if (e.target !== "market-curve") return;
       if (props.config.wmWants === "hide") {
@@ -247,7 +304,6 @@ export default defineComponent({
 
     const board = ref<MarketBoard | null>(null);
     const loading = ref(false);
-    const budget = ref<number | "">("");
     const metric = ref<"total" | "phys" | "ele">("total");
     const metrics = [
       { id: "total" as const, label: "총 DPS" },
@@ -255,7 +311,42 @@ export default defineComponent({
       { id: "ele" as const, label: "원소" },
     ];
     const sortDesc = ref(true);
-    const picked = reactive(new Set<string>()); // "key|min"
+
+    // 예산 — 통화 선택 가능, 내부 비교는 전부 엑잘 기준
+    const budget = ref<number | "">("");
+    const budgetCur = ref<"exalted" | "chaos" | "divine" | "annul">("exalted");
+    const currencies = [
+      { id: "exalted" as const, label: "엑잘" },
+      { id: "divine" as const, label: "디바인" },
+      { id: "chaos" as const, label: "카오스" },
+      { id: "annul" as const, label: "소멸" },
+    ];
+    const budgetEx = computed(() => {
+      if (typeof budget.value !== "number" || budget.value <= 0) return 0;
+      const r = board.value?.rates[budgetCur.value] ?? 0;
+      return r > 0 ? budget.value * r : 0;
+    });
+
+    // 거래소식 자유 필터
+    const filters = reactive<StatFilter[]>([]);
+    const query = ref("");
+    const showDrop = ref(false);
+    function hideDropSoon() {
+      setTimeout(() => (showDrop.value = false), 150);
+    }
+    const matchedStats = computed<StatOption[]>(() => {
+      if (!board.value) return [];
+      const q = query.value.trim().toLowerCase();
+      const used = new Set(filters.map((f) => f.key));
+      const pool = board.value.stats.filter((s) => !used.has(s.key));
+      if (!q) return pool.slice(0, 20); // 비어 있으면 자주 보이는 옵션 순
+      return pool.filter((s) => s.key.toLowerCase().includes(q)).slice(0, 20);
+    });
+    function addFilter(s: StatOption) {
+      filters.push({ key: s.key, min: null, max: null });
+      query.value = "";
+      showDrop.value = false;
+    }
 
     async function load() {
       loading.value = true;
@@ -270,20 +361,20 @@ export default defineComponent({
       { immediate: true },
     );
 
-    function toggleCond(c: CondChip) {
-      const id = c.key + "|" + c.min;
-      if (picked.has(id)) picked.delete(id);
-      else picked.add(id);
-    }
-
-    const preds = computed(() => {
-      if (!board.value) return [];
-      return board.value.conds.filter((c) => picked.has(c.key + "|" + c.min));
-    });
+    // v-model.number 는 빈 입력을 "" 로 만든다 — null 로 정규화
+    const normFilters = computed<StatFilter[]>(() =>
+      filters.map((f) => ({
+        key: f.key,
+        min: typeof f.min === "number" ? f.min : null,
+        max: typeof f.max === "number" ? f.max : null,
+      })),
+    );
     const filtered = computed(() => {
       if (!board.value) return [];
-      if (!preds.value.length) return board.value.rows;
-      return board.value.rows.filter((r) => meetsAll(r.offs, preds.value));
+      if (!normFilters.value.length) return board.value.rows;
+      return board.value.rows.filter((r) =>
+        matchesFilters(r.offs, normFilters.value),
+      );
     });
     const front = computed<Row[]>(() =>
       frontier(
@@ -304,10 +395,8 @@ export default defineComponent({
       sortDesc.value ? [...front.value].reverse() : front.value,
     );
     const best = computed(() => {
-      if (typeof budget.value !== "number" || budget.value <= 0) return null;
-      const affordable = front.value.filter(
-        (r) => r.p <= (budget.value as number),
-      );
+      if (budgetEx.value <= 0) return null;
+      const affordable = front.value.filter((r) => r.p <= budgetEx.value);
       return affordable.length ? affordable[affordable.length - 1] : null;
     });
 
@@ -318,7 +407,7 @@ export default defineComponent({
     );
     let chartScale: { X: (d: number) => number } | null = null;
 
-    const PAD = { l: 56, r: 16, t: 12, b: 22 };
+    const PAD = { l: 60, r: 18, t: 12, b: 24 };
     const GOLD = "#eab308";
     const TEAL = "#2dd4bf";
 
@@ -328,9 +417,7 @@ export default defineComponent({
       const useDiv = dv > 1 && pEx >= dv;
       const v = useDiv ? pEx / dv : pEx;
       const s =
-        v >= 10 || Number.isInteger(v)
-          ? String(Math.round(v))
-          : v.toFixed(1);
+        v >= 10 || Number.isInteger(v) ? String(Math.round(v)) : v.toFixed(1);
       return s + (useDiv ? " div" : " ex");
     }
 
@@ -359,14 +446,14 @@ export default defineComponent({
       const ctx = cv.getContext("2d")!;
       ctx.scale(dpr, dpr);
       ctx.clearRect(0, 0, W, H);
-      ctx.font = "11px sans-serif";
+      ctx.font = "12px sans-serif";
 
       const f = front.value;
       if (f.length < 2) {
         chartScale = null;
         ctx.fillStyle = "#6b7280";
         ctx.textAlign = "center";
-        ctx.fillText("이 조건 조합은 매물이 부족합니다", W / 2, H / 2);
+        ctx.fillText("이 조건은 매물이 부족합니다", W / 2, H / 2);
         return;
       }
 
@@ -382,7 +469,7 @@ export default defineComponent({
         ((Math.log10(p) - lo) / (hi - lo || 1)) * (H - PAD.t - PAD.b);
       chartScale = { X };
 
-      // 가격 눈금 (10의 거듭제곱 + 2.5/25 중간눈금이 되도록 log10 0.4 간격은 과함 — 거듭제곱만)
+      // 가격 눈금 (10의 거듭제곱)
       ctx.strokeStyle = "rgba(107,114,128,0.2)";
       ctx.fillStyle = "#9ca3af";
       ctx.textAlign = "right";
@@ -398,13 +485,13 @@ export default defineComponent({
       }
       // DPS 눈금 (보기 좋은 단위)
       ctx.textAlign = "center";
-      for (const d of niceTicks(xmin, xmax, 6)) {
+      for (const d of niceTicks(xmin, xmax, 8)) {
         const x = X(d);
         ctx.beginPath();
         ctx.moveTo(x, PAD.t);
         ctx.lineTo(x, H - PAD.b);
         ctx.stroke();
-        ctx.fillText(String(Math.round(d)), x, H - 7);
+        ctx.fillText(String(Math.round(d)), x, H - 8);
       }
       // 축선
       ctx.strokeStyle = "rgba(156,163,175,0.5)";
@@ -463,8 +550,8 @@ export default defineComponent({
       }
 
       // 예산선 + 최적점
-      if (typeof budget.value === "number" && budget.value > 0) {
-        const b = budget.value;
+      if (budgetEx.value > 0) {
+        const b = budgetEx.value;
         if (Math.log10(b) >= lo && Math.log10(b) <= hi) {
           ctx.strokeStyle = TEAL;
           ctx.setLineDash([5, 4]);
@@ -477,7 +564,7 @@ export default defineComponent({
         if (best.value) {
           ctx.fillStyle = TEAL;
           ctx.beginPath();
-          ctx.arc(X(best.value.d), Y(best.value.p), 5.5, 0, Math.PI * 2);
+          ctx.arc(X(best.value.d), Y(best.value.p), 6, 0, Math.PI * 2);
           ctx.fill();
           ctx.strokeStyle = "#0f172a";
           ctx.lineWidth = 1.5;
@@ -505,14 +592,14 @@ export default defineComponent({
         }
       }
       hover.value = {
-        left: Math.min(chartScale.X(nearest.d) + 12, rect.width - 150),
-        top: Math.max(ev.clientY - rect.top - 30, 4),
+        left: Math.min(chartScale.X(nearest.d) + 12, rect.width - 170),
+        top: Math.max(ev.clientY - rect.top - 32, 4),
         d: nearest.d,
         p: nearest.p,
       };
     }
 
-    watch([front, budget, board, hover], () => nextTick(draw), {
+    watch([front, budgetEx, board, hover], () => nextTick(draw), {
       flush: "post",
     });
     watch(
@@ -524,12 +611,19 @@ export default defineComponent({
     return {
       board,
       loading,
-      budget,
       metric,
       metrics,
       sortDesc,
-      picked,
-      toggleCond,
+      budget,
+      budgetCur,
+      currencies,
+      budgetEx,
+      filters,
+      query,
+      showDrop,
+      hideDropSoon,
+      matchedStats,
+      addFilter,
       filtered,
       front,
       rungs,
