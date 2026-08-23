@@ -201,7 +201,7 @@ export const defaultConfig = (): Config => ({
   logKeys: false,
   accountName: "",
   stashScroll: true,
-  language: "en",
+  language: "ko", // 이 포크는 카카오(한국) 서버 대상 — ko면 거래사이트도 kakaogames로 자동 연결
   preferredTradeSite: "default",
   realm: "pc-ggg",
   fontSize: 16,

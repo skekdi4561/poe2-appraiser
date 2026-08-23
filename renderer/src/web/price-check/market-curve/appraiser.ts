@@ -129,8 +129,11 @@ export function isBow(item: ParsedItem): boolean {
 
 export async function appraise(item: ParsedItem): Promise<CurveVerdict | null> {
   if (!isBow(item)) return null;
-  const physDps = item.weaponPHYSICAL ?? 0;
-  const eleDps = item.weaponELEMENTAL ?? 0;
+  // weaponPHYSICAL/ELEMENTAL 은 DPS 가 아니라 타당 평균 피해 — 수집기(serve.py)와 같이 공속을 곱한다.
+  // 고유 아이템은 파서가 무기 수치를 전부 지우므로(Parser.ts "undo everything") 여기서 0이 되어 null 반환된다.
+  const aps = item.weaponAS ?? 0;
+  const physDps = (item.weaponPHYSICAL ?? 0) * aps;
+  const eleDps = (item.weaponELEMENTAL ?? 0) * aps;
   const totalDps = physDps + eleDps;
   if (totalDps <= 0) return null;
   const snap = await fetchSnapshot();

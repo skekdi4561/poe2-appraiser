@@ -33,11 +33,17 @@
       </div>
     </template>
   </div>
+  <div
+    v-else-if="uniqueBow"
+    class="bg-gray-800 rounded px-4 py-3 mb-4 text-sm text-gray-400"
+  >
+    고유 활은 이름으로 거래됩니다 — 시장 곡선 판정(희귀 활 전용)은 생략합니다
+  </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, shallowRef, watch } from "vue";
-import { ParsedItem } from "@/parser";
+import { computed, defineComponent, PropType, shallowRef, watch } from "vue";
+import { ParsedItem, ItemRarity } from "@/parser";
 import { appraise, isBow, CurveVerdict } from "./appraiser";
 
 export default defineComponent({
@@ -60,7 +66,10 @@ export default defineComponent({
       },
       { immediate: true },
     );
-    return { verdict };
+    const uniqueBow = computed(
+      () => isBow(props.item) && props.item.rarity === ItemRarity.Unique,
+    );
+    return { verdict, uniqueBow };
   },
 });
 </script>
