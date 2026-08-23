@@ -78,6 +78,7 @@ export type IpcEvent =
   | IpcFocusChange
   | IpcVisibility
   | IpcFocusGame
+  | IpcFocusOverlay
   | IpcHideExclusiveWidget
   | IpcTrackArea
   // events used by any type of Client:
@@ -119,6 +120,9 @@ type IpcVisibility = Event<
 >;
 
 type IpcFocusGame = Event<"OVERLAY->MAIN::focus-game">;
+
+// 위젯(시장 곡선 등)이 스스로 입력 포커스를 요청할 때 — focus-game 의 대칭
+type IpcFocusOverlay = Event<"OVERLAY->MAIN::focus-overlay">;
 
 type IpcHideExclusiveWidget = Event<"MAIN->OVERLAY::hide-exclusive-widget">;
 

@@ -24,6 +24,10 @@ export class OverlayWindow {
       "OVERLAY->MAIN::focus-game",
       this.assertGameActive,
     );
+    this.server.onEventAnyClient(
+      "OVERLAY->MAIN::focus-overlay",
+      this.assertOverlayActive,
+    );
     this.poeWindow.on("active-change", this.handlePoeWindowActiveChange);
     this.poeWindow.onAttach(this.handleOverlayAttached);
 
