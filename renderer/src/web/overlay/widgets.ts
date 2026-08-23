@@ -72,6 +72,11 @@ export interface DelveGridWidget extends Widget {
   toggleKey: string | null;
 }
 
+export interface MarketCurveWidget extends Widget {
+  anchor: Anchor;
+  toggleKey: string | null;
+}
+
 export interface ImageStripWidget extends Widget {
   anchor: Anchor;
   images: Array<{

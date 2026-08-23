@@ -156,7 +156,7 @@ export interface Config {
 }
 
 export const defaultConfig = (): Config => ({
-  configVersion: 34,
+  configVersion: 35,
   overlayKey: "Shift + Space",
   overlayBackground: "rgba(129, 139, 149, 0.15)",
   overlayBackgroundClose: true,
@@ -669,6 +669,23 @@ function upgradeConfig(_config: Config): Config {
 
     config.configVersion = 34;
   }
+
+  if (config.configVersion < 35) {
+    // 이 포크의 시장 곡선 위젯 (활 시세 감정소)
+    if (!config.widgets.some((w) => w.wmType === "market-curve")) {
+      config.widgets.push({
+        wmId: Math.max(0, ...config.widgets.map((w) => w.wmId as number)) + 1,
+        wmType: "market-curve",
+        wmTitle: "",
+        wmWants: "hide",
+        wmZorder: null,
+        wmFlags: [],
+        anchor: { pos: "cc", x: 50, y: 50 },
+        toggleKey: "F7",
+      });
+    }
+    config.configVersion = 35;
+  }
   /* eslint-enable */
 
   return config as unknown as Config;
@@ -747,6 +764,15 @@ function getConfigForHost(): HostConfig {
     actions.push({
       shortcut: delveGrid.toggleKey,
       action: { type: "trigger-event", target: "delve-grid" },
+      keepModKeys: true,
+    });
+  }
+
+  const marketCurve = AppConfig("market-curve") as widget.MarketCurveWidget;
+  if (marketCurve?.toggleKey) {
+    actions.push({
+      shortcut: marketCurve.toggleKey,
+      action: { type: "trigger-event", target: "market-curve" },
       keepModKeys: true,
     });
   }
