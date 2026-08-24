@@ -42,7 +42,24 @@ export default defineConfig({
             /* 메인 없음 — 아래 스텁 사용 */
           }
           const target = req.url.slice("/proxy/".length);
-          const okPath = /^[\w.-]+\/api\/trade2\/(data|leagues)(\/|\?|$)/.test(target);
+          // 호스트를 명시 허용목록으로 잠근다 — [\w.-]+ 만으로는 evil.com 이나
+          // 169.254.169.254(클라우드 메타데이터)까지 프록시돼 dev 서버가 SSRF 통로가 된다.
+          // 실제 프록시(main/src/proxy.ts)의 공식 거래소 호스트만 허용한다.
+          const PREVIEW_HOSTS = new Set([
+            "www.pathofexile.com",
+            "ru.pathofexile.com",
+            "pathofexile.tw",
+            "poe.kakaogames.com",
+            "jp.pathofexile.com",
+            "de.pathofexile.com",
+            "es.pathofexile.com",
+            "br.pathofexile.com",
+            "fr.pathofexile.com",
+          ]);
+          const host = target.split("/", 1)[0].split("?")[0];
+          const okPath =
+            PREVIEW_HOSTS.has(host) &&
+            /^[\w.-]+\/api\/trade2\/(data|leagues)(\/|\?|$)/.test(target);
           if (req.method !== "GET" || !okPath) {
             res.statusCode = 501;
             res.end(JSON.stringify({ error: "web-preview: blocked" }));
