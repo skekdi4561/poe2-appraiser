@@ -1,6 +1,6 @@
 // 시장 곡선 판정 — 감정소(serve.py/index.html)와 같은 픽스처·같은 답이어야 한다
 import { describe, it, expect } from "vitest";
-import { frontier, formatEx, matchesFilters, statOptions, metricRows, RichRow } from "./appraiser";
+import { frontier, formatEx, matchesFilters, statOptions, metricRows, rowsFromSnapshot, RichRow } from "./appraiser";
 
 describe("frontier", () => {
   it("전수 비교와 같은 판정", () => {
@@ -78,5 +78,40 @@ describe("metricRows", () => {
     expect(metricRows(rows, "ele")).toEqual([{ d: 80, p: 5, t: 0 }]);
     expect(metricRows(rows, "phys")).toHaveLength(2);
     expect(metricRows(rows, "total")).toHaveLength(2);
+  });
+});
+
+describe("rowsFromSnapshot", () => {
+  const rates = { exalted: 1, divine: 300 };
+  const fb = new Set<string>();
+  const now = 1_000_000_000_000;
+  it("문자열/비숫자 pdps 는 숫자 강제 — frontier 오염 방지", () => {
+    const snap = {
+      taken_at: now,
+      bows: [
+        // pdps 가 문자열 "227" 이면 예전엔 pdps+edps 가 "22738" 로 결합됐다
+        { rarity: "Rare", cur: "divine", price: 5, t: now, pdps: "227" as unknown as number, edps: 38 },
+        { rarity: "Rare", cur: "divine", price: 9, t: now, pdps: 300, edps: 0 },
+      ],
+    };
+    const { rows } = rowsFromSnapshot(snap, rates, fb, now);
+    for (const r of rows) {
+      expect(typeof r.pdps).toBe("number");
+      expect(typeof r.edps).toBe("number");
+      expect(Number.isFinite(r.pdps + r.edps)).toBe(true);
+    }
+    // "227" → 0 강제되어 edps 38 만 남음, 두 번째는 300
+    expect(rows.map((r) => r.pdps + r.edps).sort((a, b) => a - b)).toEqual([38, 300]);
+  });
+  it("가격/DPS 가 0·음수·비정상이면 제외", () => {
+    const snap = {
+      taken_at: now,
+      bows: [
+        { rarity: "Rare", cur: "divine", price: 0, t: now, pdps: 100, edps: 0 },
+        { rarity: "Rare", cur: "divine", price: 5, t: now, pdps: 0, edps: 0 },
+        { rarity: "Rare", cur: "divine", price: "x" as unknown as number, t: now, pdps: 100, edps: 0 },
+      ],
+    };
+    expect(rowsFromSnapshot(snap, rates, fb, now).rows).toHaveLength(0);
   });
 });

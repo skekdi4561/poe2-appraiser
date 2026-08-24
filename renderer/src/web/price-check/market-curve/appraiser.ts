@@ -236,27 +236,45 @@ export function formatEx(vEx: number, rates: Record<string, number>): string {
   return num + (useDiv ? " div" : " ex");
 }
 
+// 신뢰 경계(네트워크 fetch JSON)에서 숫자를 강제한다 — pdps 가 문자열 "227" 로
+// 오면 pdps+edps 가 문자열 결합("22738")되어 frontier 정렬을 통째로 망가뜨린다(실측).
+// serve.py/worker 가 숫자를 보장하지만, 읽는 쪽도 방어하는 게 4회차 원칙의 연장이다.
+const numOr0 = (v: unknown): number =>
+  typeof v === "number" && isFinite(v) ? v : 0;
+
+// 스냅샷 → 24h 유효 매물 목록 (순수 함수라 테스트 가능)
+export function rowsFromSnapshot(
+  snap: Snapshot,
+  rates: Record<string, number>,
+  fallbackCurs: Set<string>,
+  now: number = Date.now(),
+): { rows: RichRow[]; rateFallback: boolean } {
+  const cut = now - ROW_TTL;
+  let rateFallback = false;
+  const rows: RichRow[] = [];
+  for (const b of snap.bows ?? []) {
+    if ((b.rarity ?? "Rare") !== "Rare") continue;
+    const r = rates[b.cur ?? ""] ?? 0;
+    const price = numOr0(b.price);
+    if (r <= 0 || price <= 0) continue;
+    const t = numOr0(b.t) || numOr0(snap.taken_at);
+    if (t < cut) continue;
+    const pdps = numOr0(b.pdps);
+    const edps = numOr0(b.edps);
+    if (pdps + edps <= 0) continue;
+    if (fallbackCurs.has(b.cur!)) rateFallback = true;
+    rows.push({ pdps, edps, p: price * r, t, offs: offMods(b.mods ?? []) });
+  }
+  return { rows, rateFallback };
+}
+
 // 스냅샷 → 24h 유효 매물(옵션 포함) + 옵션 목록 + 환율
 export async function marketBoard(): Promise<MarketBoard | null> {
   const snap = await fetchSnapshot();
   if (!snap?.bows?.length) return null;
 
   const { rates, fallbackCurs } = parseRates(snap);
-  const cut = Date.now() - ROW_TTL;
-  let rateFallback = false;
-  const rows: RichRow[] = [];
-  for (const b of snap.bows) {
-    if ((b.rarity ?? "Rare") !== "Rare") continue;
-    const r = rates[b.cur ?? ""] ?? 0;
-    if (r <= 0 || !b.price) continue;
-    const t = b.t ?? snap.taken_at ?? 0;
-    if (t < cut) continue;
-    const pdps = b.pdps ?? 0;
-    const edps = b.edps ?? 0;
-    if (pdps + edps <= 0) continue;
-    if (fallbackCurs.has(b.cur!)) rateFallback = true;
-    rows.push({ pdps, edps, p: b.price * r, t, offs: offMods(b.mods ?? []) });
-  }
+  const { rows, rateFallback } = rowsFromSnapshot(snap, rates, fallbackCurs);
   if (rows.length < 2) return null;
 
   return {
