@@ -1,6 +1,6 @@
 // 시장 곡선 판정 — 감정소(serve.py/index.html)와 같은 픽스처·같은 답이어야 한다
 import { describe, it, expect } from "vitest";
-import { frontier, formatEx, matchesFilters, statOptions, RichRow } from "./appraiser";
+import { frontier, formatEx, matchesFilters, statOptions, metricRows, RichRow } from "./appraiser";
 
 describe("frontier", () => {
   it("전수 비교와 같은 판정", () => {
@@ -65,5 +65,18 @@ describe("statOptions", () => {
     const s = statOptions(rows);
     expect(s).toHaveLength(1);
     expect(s[0]).toEqual({ key: "치명타 확률 #%", n: 2, lo: 2, hi: 5 });
+  });
+});
+
+describe("metricRows", () => {
+  // 물리 전용 초저가 활이 "원소" 지표에서 0 DPS 계단으로 새면 안 된다 (index.html v.d>0 동일)
+  const rows: RichRow[] = [
+    { pdps: 300, edps: 0, p: 1, t: 0, offs: {} },
+    { pdps: 100, edps: 80, p: 5, t: 0, offs: {} },
+  ];
+  it("선택 지표가 0인 행은 제외", () => {
+    expect(metricRows(rows, "ele")).toEqual([{ d: 80, p: 5, t: 0 }]);
+    expect(metricRows(rows, "phys")).toHaveLength(2);
+    expect(metricRows(rows, "total")).toHaveLength(2);
   });
 });

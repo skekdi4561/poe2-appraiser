@@ -187,6 +187,21 @@ export function matchesFilters(
   });
 }
 
+// 지표별 행 변환 — 선택 지표가 0인 활(예: 원소 지표에서 물리 전용 활)은
+// 제외한다 — index.html 의 v.d > 0 규칙과 같아야 두 화면의 곡선이 일치한다.
+export function metricRows(
+  rows: RichRow[],
+  metric: "total" | "phys" | "ele",
+): Row[] {
+  return rows
+    .map((r) => ({
+      d: metric === "phys" ? r.pdps : metric === "ele" ? r.edps : r.pdps + r.edps,
+      p: r.p,
+      t: r.t,
+    }))
+    .filter((r) => r.d > 0);
+}
+
 // ---------- 최전선 ----------
 
 // 감정소 frontier 와 같은 판정(동점 전원 생존) — DPS 내림차순 한 번 훑기

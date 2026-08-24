@@ -247,6 +247,7 @@ import {
   frontier,
   formatEx,
   matchesFilters,
+  metricRows,
   MarketBoard,
   StatOption,
   StatFilter,
@@ -377,18 +378,7 @@ export default defineComponent({
       );
     });
     const front = computed<Row[]>(() =>
-      frontier(
-        filtered.value.map((r) => ({
-          d:
-            metric.value === "phys"
-              ? r.pdps
-              : metric.value === "ele"
-                ? r.edps
-                : r.pdps + r.edps,
-          p: r.p,
-          t: r.t,
-        })),
-      ),
+      frontier(metricRows(filtered.value, metric.value)),
     );
     // frontier 는 DPS 오름차순 — 표시 정렬만 뒤집는다
     const rungs = computed(() =>
