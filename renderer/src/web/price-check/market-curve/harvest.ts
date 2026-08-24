@@ -7,6 +7,17 @@ import { ParsedItem } from "@/parser";
 import { ItemCategory } from "@/parser/meta";
 import { AppConfig } from "@/web/Config";
 
+// 수집 대상 판정에 필요한 검색 문맥 — 요청마다 명시로 넘긴다(전역 상태 금지).
+// 전역 ctx 를 async 응답 시점에 읽으면, 그 사이 다른 검색이 ctx 를 덮어써
+// 비-활(검 등, pdps 존재)이 활 데이터로 오염 업로드된다(실측 재현, 13회차).
+export interface HarvestCtx {
+  isBow: boolean;
+  league: string;
+}
+export function harvestCtxOf(item: ParsedItem, league: string): HarvestCtx {
+  return { isBow: item.category === ItemCategory.Bow, league };
+}
+
 // Cloudflare Worker 수합 엔드포인트 — 비어 있으면 수집 기능 전체가 꺼진다
 export const HARVEST_URL = "https://poe2-bow-harvest.skekdi4561.workers.dev";
 
@@ -37,16 +48,9 @@ interface HarvestRow {
   league: string;
 }
 
-// 검색 한 번마다 갱신 — 활 검색의 fetch 응답만 수집 대상
-let ctx: { isBow: boolean; league: string } = { isBow: false, league: "" };
-
-export function setHarvestContext(item: ParsedItem, league: string) {
-  ctx = { isBow: item.category === ItemCategory.Bow, league };
-}
-
-function isKakaoStandard(): boolean {
+function isKakaoStandard(league: string): boolean {
   // 감정소 데이터는 카카오 스탠다드 리그 기준 — 다른 시장을 섞으면 곡선이 오염된다
-  return AppConfig().language === "ko" && ctx.league === "Standard";
+  return AppConfig().language === "ko" && league === "Standard";
 }
 
 function toNumber(s: unknown): number {
@@ -77,7 +81,7 @@ function modLines(item: any): string[] {
 }
 
 // serve.py normalize() 의 TS 판 — null 이면 수집 대상이 아니다
-function normalizeResult(res: any): HarvestRow | null {
+function normalizeResult(res: any, league: string): HarvestRow | null {
   const item = res?.item ?? {};
   const listing = res?.listing ?? {};
   const price = listing.price ?? {};
@@ -102,7 +106,7 @@ function normalizeResult(res: any): HarvestRow | null {
     mods: modLines(item),
     // 카카오 즉시구매 매물은 수수료(fee)가 붙는다 — 수합 서버가 신뢰 필터로 쓴다
     fee: typeof listing.fee === "number" ? listing.fee : undefined,
-    league: ctx.league,
+    league,
   };
 }
 /* eslint-enable */
@@ -132,10 +136,10 @@ export function _flush() {
   if (_queue.size) flushTimer = setTimeout(_flush, 1000); // 남은 행 이어 보내기
 }
 
-export function harvestFetchResults(results: unknown[]) {
-  if (!HARVEST_URL || !ctx.isBow || !isKakaoStandard()) return;
+export function harvestFetchResults(results: unknown[], ctx: HarvestCtx) {
+  if (!HARVEST_URL || !ctx.isBow || !isKakaoStandard(ctx.league)) return;
   for (const res of results) {
-    const row = normalizeResult(res);
+    const row = normalizeResult(res, ctx.league);
     if (row?.id) _queue.set(row.id, row);
   }
   if (_queue.size && !flushTimer) flushTimer = setTimeout(_flush, 5000);

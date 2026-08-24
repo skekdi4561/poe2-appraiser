@@ -43,3 +43,19 @@ describe("flush 배치", () => {
     expect(new TextEncoder().encode(body).length).toBeLessThan(64 * 1024);
   });
 });
+
+import { harvestCtxOf } from "./harvest";
+import { ItemCategory } from "@/parser/meta";
+
+describe("harvestCtxOf (경쟁 조건 방지)", () => {
+  it("검색마다 독립 문맥 — 나중 검색이 앞 검색 문맥을 덮지 않는다", () => {
+    const bow = harvestCtxOf({ category: ItemCategory.Bow } as never, "Standard");
+    const sword = harvestCtxOf({ category: ItemCategory.OneHandedSword } as never, "Standard");
+    // 전역 상태가 아니라 값이므로, 둘째 호출이 첫째를 오염시키지 않는다
+    expect(bow.isBow).toBe(true);
+    expect(sword.isBow).toBe(false);
+  });
+  it("비-활은 isBow=false — 활 데이터로 안 섞인다", () => {
+    expect(harvestCtxOf({ category: ItemCategory.OneHandedSword } as never, "Standard").isBow).toBe(false);
+  });
+});

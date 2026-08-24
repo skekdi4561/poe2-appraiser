@@ -9,7 +9,7 @@ import {
   requestTradeResultList,
   requestResults,
 } from "@/web/price-check/trade/pathofexile-trade";
-import { setHarvestContext } from "../market-curve/harvest";
+import { harvestCtxOf } from "../market-curve/harvest";
 
 const API_FETCH_LIMIT = 100;
 const MIN_NOT_GROUPED = 7;
@@ -62,7 +62,7 @@ export function useTradeApi() {
       fetchResults.value = _fetchResults;
 
       const _searchId = searchId;
-      setHarvestContext(item, filters.trade.league); // 소극 수집 — 활 검색 응답만 대상
+      const harvest = harvestCtxOf(item, filters.trade.league); // 소극 수집 문맥(요청에 고정)
       const request = createTradeRequest(filters, stats, item);
       const _searchResult = await requestTradeResultList(
         request,
@@ -80,7 +80,7 @@ export function useTradeApi() {
             ? requestResults(
                 _searchResult.id,
                 _searchResult.result.slice(0, 10),
-                { accountName: AppConfig().accountName },
+                { accountName: AppConfig().accountName, harvest },
               ).then((results) => {
                 _fetchResults.push(...results);
               })
@@ -90,7 +90,7 @@ export function useTradeApi() {
             ? requestResults(
                 _searchResult.id,
                 _searchResult.result.slice(10, 20),
-                { accountName: AppConfig().accountName },
+                { accountName: AppConfig().accountName, harvest },
               ).then(async (results) => {
                 await r1.then(() => {
                   _fetchResults.push(...results);
@@ -116,7 +116,7 @@ export function useTradeApi() {
           await requestResults(
             _searchResult.id,
             _searchResult.result.slice(fetched, fetched + 10),
-            { accountName: AppConfig().accountName },
+            { accountName: AppConfig().accountName, harvest },
           ).then((results) => {
             _fetchResults.push(...results);
           });
