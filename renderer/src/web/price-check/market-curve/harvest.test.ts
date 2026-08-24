@@ -59,3 +59,38 @@ describe("harvestCtxOf (경쟁 조건 방지)", () => {
     expect(harvestCtxOf({ category: ItemCategory.OneHandedSword } as never, "Standard").isBow).toBe(false);
   });
 });
+
+import { normalizeResult } from "./harvest";
+
+describe("normalizeResult — serve.py normalize 정합", () => {
+  const base = {
+    id: "x1",
+    item: { extended: { pdps: 100, edps: 0 }, typeLine: "고급 활" },
+    listing: { price: { currency: "divine", amount: 3 } },
+  };
+  it("rarity 문자열이 있으면 그대로", () => {
+    const r = normalizeResult({ ...base, item: { ...base.item, rarity: "Rare" } }, "Standard");
+    expect(r?.rarity).toBe("Rare");
+  });
+  it("rarity 누락 + frameType=2 → 'Rare' (frameType 폴백, serve.py rarity_of 와 정합)", () => {
+    // 이 폴백이 없으면 API 가 rarity 를 생략한 레어 활이 ''로 저장돼 곡선에서 빠졌다
+    const r = normalizeResult({ ...base, item: { ...base.item, frameType: 2 } }, "Standard");
+    expect(r?.rarity).toBe("Rare");
+  });
+  it("rarity·frameType 둘 다 없으면 ''", () => {
+    const r = normalizeResult(base, "Standard");
+    expect(r?.rarity).toBe("");
+  });
+  it("룬 변형 frameType 13 → 'Rare'", () => {
+    const r = normalizeResult({ ...base, item: { ...base.item, frameType: 13 } }, "Standard");
+    expect(r?.rarity).toBe("Rare");
+  });
+  it("pdps 반올림은 half-up — serve.py round1 과 지문 일치", () => {
+    // 224.25 → 224.3 (half-up). Python round()(banker's)면 224.2 라 지문이 갈렸다.
+    const r = normalizeResult(
+      { ...base, item: { ...base.item, extended: { pdps: 224.25, edps: 0 }, rarity: "Rare" } },
+      "Standard",
+    );
+    expect(r?.pdps).toBe(224.3);
+  });
+});

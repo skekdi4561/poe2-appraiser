@@ -80,8 +80,28 @@ function modLines(item: any): string[] {
   return out;
 }
 
-// serve.py normalize() 의 TS 판 — null 이면 수집 대상이 아니다
-function normalizeResult(res: any, league: string): HarvestRow | null {
+// frameType 은 rarity 문자열이 없을 때의 대비책 (12~14 는 룬 박힌 변형).
+// serve.py FRAME_RARITY 와 글자 단위로 같아야 한다.
+const FRAME_RARITY: Record<number, string> = {
+  0: "Normal",
+  1: "Magic",
+  2: "Rare",
+  3: "Unique",
+  12: "Magic",
+  13: "Rare",
+  14: "Unique",
+};
+// serve.py rarity_of 의 TS 판 — rarity 문자열이 없거나 이상하면 frameType 으로 보정한다.
+// 이게 없으면(예전엔 item.rarity ?? "") API 가 rarity 를 생략한 레어 활이 ""로 저장돼
+// Rare 필터에서 빠졌다 — 수집기는 frameType 으로 "Rare"로 넣으므로 크라우드만 조용히 누락됐다.
+function rarityOf(item: any): string {
+  const r = item.rarity;
+  if (r === "Normal" || r === "Magic" || r === "Rare" || r === "Unique") return r;
+  return FRAME_RARITY[item.frameType] ?? "";
+}
+
+// serve.py normalize() 의 TS 판 — null 이면 수집 대상이 아니다 (export 는 테스트 전용)
+export function normalizeResult(res: any, league: string): HarvestRow | null {
   const item = res?.item ?? {};
   const listing = res?.listing ?? {};
   const price = listing.price ?? {};
@@ -102,7 +122,7 @@ function normalizeResult(res: any, league: string): HarvestRow | null {
     crit: prop(item, /Critical .*Chance|치명타/),
     price: price.amount,
     cur: price.currency,
-    rarity: item.rarity ?? "",
+    rarity: rarityOf(item), // serve.py rarity_of 와 정합 — frameType 폴백 포함
     mods: modLines(item),
     // 카카오 즉시구매 매물은 수수료(fee)가 붙는다 — 수합 서버가 신뢰 필터로 쓴다
     fee: typeof listing.fee === "number" ? listing.fee : undefined,
