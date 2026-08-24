@@ -62,6 +62,7 @@ export interface MarketBoard {
   ageHours: number;
   rates: Record<string, number>;
   rateFallback: boolean;
+  staleKept: boolean; // 24h 이내가 부족해 낡은 매물로 대체했는가(수집 중단 추정) — index.html staleKept 와 같음
 }
 
 let cached: { at: number; data: Snapshot | null } = { at: 0, data: null };
@@ -248,24 +249,31 @@ export function rowsFromSnapshot(
   rates: Record<string, number>,
   fallbackCurs: Set<string>,
   now: number = Date.now(),
-): { rows: RichRow[]; rateFallback: boolean } {
+): { rows: RichRow[]; rateFallback: boolean; staleKept: boolean } {
   const cut = now - ROW_TTL;
   let rateFallback = false;
-  const rows: RichRow[] = [];
+  const fresh: RichRow[] = [];
+  const all: RichRow[] = [];
   for (const b of snap.bows ?? []) {
     if ((b.rarity ?? "Rare") !== "Rare") continue;
     const r = rates[b.cur ?? ""] ?? 0;
     const price = numOr0(b.price);
     if (r <= 0 || price <= 0) continue;
     const t = numOr0(b.t) || numOr0(snap.taken_at);
-    if (t < cut) continue;
     const pdps = numOr0(b.pdps);
     const edps = numOr0(b.edps);
     if (pdps + edps <= 0) continue;
     if (fallbackCurs.has(b.cur!)) rateFallback = true;
-    rows.push({ pdps, edps, p: price * r, t, offs: offMods(b.mods ?? []) });
+    const row = { pdps, edps, p: price * r, t, offs: offMods(b.mods ?? []) };
+    all.push(row);
+    if (t >= cut) fresh.push(row);
   }
-  return { rows, rateFallback };
+  // 신선분이 곡선을 못 그릴 만큼 적으면(수집 중단 추정) 낡은 매물이라도 보여준다 —
+  // 빈 화면/"불러오지 못함"은 고장으로 보인다. index.html partition 의 staleKept 와 같은 규칙.
+  if (fresh.length < 2 && all.length >= 2) {
+    return { rows: all, rateFallback, staleKept: true };
+  }
+  return { rows: fresh, rateFallback, staleKept: false };
 }
 
 // 스냅샷 → 24h 유효 매물(옵션 포함) + 옵션 목록 + 환율
@@ -274,7 +282,11 @@ export async function marketBoard(): Promise<MarketBoard | null> {
   if (!snap?.bows?.length) return null;
 
   const { rates, fallbackCurs } = parseRates(snap);
-  const { rows, rateFallback } = rowsFromSnapshot(snap, rates, fallbackCurs);
+  const { rows, rateFallback, staleKept } = rowsFromSnapshot(
+    snap,
+    rates,
+    fallbackCurs,
+  );
   if (rows.length < 2) return null;
 
   return {
@@ -284,5 +296,6 @@ export async function marketBoard(): Promise<MarketBoard | null> {
     ageHours: (Date.now() - Math.max(...rows.map((r) => r.t))) / 3_600_000,
     rates,
     rateFallback,
+    staleKept,
   };
 }

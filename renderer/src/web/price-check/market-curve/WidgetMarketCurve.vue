@@ -16,6 +16,13 @@
         >
       </div>
 
+      <div
+        v-if="board && board.staleKept"
+        class="mb-3 rounded bg-yellow-900/40 border border-yellow-700 px-3 py-1.5 text-sm text-yellow-200"
+      >
+        ⚠ 24시간 넘은 낡은 시세입니다 — 수집이 멈줘을 수 있습니다.
+      </div>
+
       <div v-if="loading" class="text-gray-400 py-12 text-center">
         시세 불러오는 중…
       </div>

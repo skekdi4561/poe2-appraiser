@@ -115,3 +115,22 @@ describe("rowsFromSnapshot", () => {
     expect(rowsFromSnapshot(snap, rates, fb, now).rows).toHaveLength(0);
   });
 });
+
+describe("rowsFromSnapshot staleKept", () => {
+  const rates = { exalted: 1, divine: 300 };
+  const fb = new Set<string>();
+  const now = 2_000_000_000_000;
+  const mk = (t: number) => ({ rarity: "Rare", cur: "divine", price: 5, pdps: 300, edps: 0, t });
+  it("신선분 부족 시 낡은 매물로 폴백하고 staleKept=true", () => {
+    const snap = { taken_at: now, bows: [mk(now - 30 * 3600 * 1000), mk(now - 40 * 3600 * 1000)] };
+    const r = rowsFromSnapshot(snap, rates, fb, now);
+    expect(r.rows.length).toBe(2);
+    expect(r.staleKept).toBe(true);
+  });
+  it("신선분 충분하면 staleKept=false, 낡은 건 제외", () => {
+    const snap = { taken_at: now, bows: [mk(now - 1000), mk(now - 2000), mk(now - 40 * 3600 * 1000)] };
+    const r = rowsFromSnapshot(snap, rates, fb, now);
+    expect(r.rows.length).toBe(2);
+    expect(r.staleKept).toBe(false);
+  });
+});
