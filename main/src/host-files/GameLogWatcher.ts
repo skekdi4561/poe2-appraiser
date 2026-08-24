@@ -44,6 +44,9 @@ export class GameLogWatcher {
     file: fs.FileHandle;
     isReading: boolean;
     readBuff: Buffer;
+    // 직전 읽기의 미완성 꼬리 바이트 — 라인(\n 이전)이나 멀티바이트 문자(한글 등)가
+    // 64KB 버퍼 경계에 걸려 잘리지 않도록 다음 읽기 앞에 이어붙인다.
+    carry: Buffer;
   } | null = null;
 
   constructor(
@@ -57,6 +60,7 @@ export class GameLogWatcher {
         if (!this._state.isReading) {
           this.fileWriter.flushClientLogFile();
           this._state.offset = 0;
+          this._state.carry = Buffer.alloc(0); // 처음부터 다시 읽으니 이월 꼬리도 비운다
           this._state.isReading = true;
           this.readToEOF();
         } else {
@@ -119,6 +123,7 @@ export class GameLogWatcher {
         offset: stats.size,
         isReading: false,
         readBuff: Buffer.allocUnsafe(64 * 1024),
+        carry: Buffer.alloc(0),
       };
     } catch {
       this.logger.write("error [GameLogWatcher] Failed to watch file.");
@@ -139,15 +144,30 @@ export class GameLogWatcher {
     const { bytesRead } = await file.read(readBuff, 0, readBuff.length, offset);
 
     if (bytesRead) {
-      const str = readBuff.toString("utf8", 0, bytesRead);
-      const lines = str
-        .split("\n")
-        .map((line) => line.trim())
-        .filter((line) => line.length);
-      this.server.sendEventTo("broadcast", {
-        name: "MAIN->CLIENT::game-log",
-        payload: { lines },
-      });
+      // 이월 꼬리 + 이번 청크를 이어붙이고, 마지막 개행(\n=0x0A)까지만 문자열로 디코드한다.
+      // \n 은 ASCII 라 UTF-8 멀티바이트 시퀀스(연속 바이트 0x80~0xBF) 안에 절대 안 나타나므로,
+      // 개행 바이트에서 자르면 항상 문자 경계라 한글 등이 쪼개지지 않는다. 개행 뒤 미완성
+      // 바이트는 carry 로 남겨 다음 읽기 앞에 붙인다(라인이 경계에 걸려 반토막 나는 것도 방지).
+      const combined = Buffer.concat([this._state.carry, readBuff.subarray(0, bytesRead)]);
+      let cut = combined.lastIndexOf(0x0a);
+      // 개행 없는 비정상 초장문으로 carry 가 무한히 커지는 것 방지 — 상한 넘으면 통째로 흘려보낸다.
+      if (cut < 0 && combined.length > 1 << 20) cut = combined.length - 1;
+      if (cut >= 0) {
+        const lines = combined
+          .toString("utf8", 0, cut + 1)
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line.length);
+        this._state.carry = Buffer.from(combined.subarray(cut + 1)); // 미완성 꼬리만 복사 보관
+        if (lines.length) {
+          this.server.sendEventTo("broadcast", {
+            name: "MAIN->CLIENT::game-log",
+            payload: { lines },
+          });
+        }
+      } else {
+        this._state.carry = combined; // 아직 완성 라인이 없다 — 계속 모은다
+      }
     }
 
     if (bytesRead) {
