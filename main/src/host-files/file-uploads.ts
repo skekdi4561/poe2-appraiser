@@ -47,10 +47,21 @@ export function addFileUploadRoutes(server: Server) {
     });
     req.once("end", () => {
       const hash = crypto.createHash("md5").update(contents).digest("hex");
-      const filename = `${hash}${path.extname(req.url!)}`;
+      // 확장자는 파싱된 pathname 에서 뽑는다 — raw req.url 을 쓰면 쿼리스트링(?v=1)이
+      // 확장자에 섞여 파일명에 '?' 가 들어가고, Windows 에서 writeFileSync 가 ENOENT 로
+      // 던져(무try/catch 였음) 전역 uncaughtException + 응답 매달림이 났다(실측).
+      const ext = path.extname(new URL(req.url!, "http://localhost").pathname);
+      const filename = `${hash}${ext}`;
 
-      fs.mkdirSync(uploadsPath, { recursive: true });
-      fs.writeFileSync(path.join(uploadsPath, filename), contents);
+      try {
+        fs.mkdirSync(uploadsPath, { recursive: true });
+        fs.writeFileSync(path.join(uploadsPath, filename), contents);
+      } catch {
+        // 디스크 가득참·권한 등 쓰기 실패도 응답을 매달지 않고 500 으로 닫는다.
+        res.statusCode = 500;
+        res.end();
+        return;
+      }
 
       res.setHeader("content-type", "application/json");
       res.end(JSON.stringify({ name: filename }));
