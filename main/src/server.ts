@@ -98,8 +98,30 @@ export const eventPipe = {
   sendEventTo,
 };
 
+// CSWSH(교차 출처 WebSocket 하이재킹) 방어. IPC 소켓은 127.0.0.1 에 있지만 로컬 브라우저
+// 페이지도 loopback 에 접속할 수 있어, 사용자가 방문한 악성 웹페이지가 ws://127.0.0.1:port/events
+// 로 붙어 이벤트를 수신·주입할 수 있다(랜덤 포트가 유일 방어였음). 브라우저는 WS 핸드셰이크에
+// Origin 을 붙이고 페이지가 그걸 위조할 수 없다. 렌더러는 항상 로컬 서버(window.location.host=
+// 127.0.0.1:port)에서 붙으므로 Origin 이 loopback 이다 → 외부 오리진만 거부한다. Origin 이
+// 없는 네이티브 클라이언트는 CSWSH 벡터가 아니므로 통과(로컬 프로세스는 이미 코드 실행 권한이 있다).
+export function isAllowedWsOrigin(origin: string | undefined): boolean {
+  if (!origin) return true;
+  let host: string;
+  try {
+    host = new URL(origin).hostname;
+  } catch {
+    return false; // 브라우저가 보내는 Origin 은 항상 파싱 가능 — 이상하면 거부
+  }
+  return (
+    host === "127.0.0.1" ||
+    host === "localhost" ||
+    host === "::1" ||
+    host === "[::1]"
+  );
+}
+
 server.on("upgrade", (req, socket, head) => {
-  if (req.url !== "/events") {
+  if (req.url !== "/events" || !isAllowedWsOrigin(req.headers.origin)) {
     return req.destroy();
   }
   websocketServer.handleUpgrade(req, socket, head, (ws) => {
@@ -116,8 +138,16 @@ export async function startServer(
   websocketServer.on("connection", (socket) => {
     lastActiveClient = socket;
     socket.on("message", (bytes) => {
-      // eslint-disable-next-line @typescript-eslint/no-base-to-string
-      const event = JSON.parse(bytes.toString("utf-8")) as IpcEvent;
+      // 잘못된 프레임(비-JSON)은 조용히 버린다 — 없으면 JSON.parse 예외가 message 핸들러에서
+      // 전역 uncaughtException 으로 새서 로그를 오염시킨다(악성/오작동 클라이언트가 스팸 가능).
+      let event: IpcEvent;
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
+        event = JSON.parse(bytes.toString("utf-8")) as IpcEvent;
+      } catch {
+        return;
+      }
+      if (!event || typeof event.name !== "string") return; // 이름 없는 이벤트는 무시
       if (event.name === "CLIENT->MAIN::used-recently") {
         lastActiveClient = socket;
       }
