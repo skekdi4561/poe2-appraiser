@@ -243,6 +243,46 @@
           </div>
         </div>
 
+        <!-- 가격 추세 (있을 때만) — 지금 살까 기다릴까 -->
+        <div v-if="trendAnchors.length" class="mt-5 pt-4 border-t border-gray-800">
+          <div class="flex items-center gap-2 mb-2">
+            <span
+              class="text-gray-500"
+              style="font-size: 12px; letter-spacing: 0.05em"
+              >가격 추세 — {{ trendDays }}일간</span
+            >
+            <div class="flex bg-gray-900 rounded p-0.5 ml-1">
+              <button
+                v-for="a in trendAnchors"
+                :key="a"
+                @click="trendAnchor = a"
+                class="px-2.5 py-0.5 rounded text-sm"
+                :class="
+                  trendAnchor === a
+                    ? 'bg-gray-600 text-white font-medium'
+                    : 'text-gray-400 hover:text-gray-200'
+                "
+              >
+                DPS {{ a }}+
+              </button>
+            </div>
+            <span
+              v-if="trendChange"
+              class="ml-auto text-sm"
+              :class="trendChange.up ? 'text-red-400' : 'text-teal-400'"
+              style="font-variant-numeric: tabular-nums"
+            >
+              {{ trendDays }}일 전 대비 {{ trendChange.up ? "▲" : "▼" }}
+              {{ trendChange.pct }}%
+            </span>
+          </div>
+          <canvas
+            ref="trendCanvasEl"
+            class="w-full rounded border border-gray-800 bg-gray-900"
+            style="height: 7rem"
+          ></canvas>
+        </div>
+
         <div class="text-sm text-gray-500 mt-3">
           희귀 활 즉시구매 매물 기준 · 24시간 이내 수집분 · 가격축 로그 스케일
         </div>
@@ -640,7 +680,111 @@ export default defineComponent({
       { flush: "post" },
     );
 
+    // ---------- 가격 추세 ----------
+    const trendAnchor = ref<number | null>(null);
+    // 데이터가 실제로 있는 앵커만 (시계열 점 2개 이상)
+    const trendAnchors = computed<number[]>(() => {
+      const tr = board.value?.trend;
+      if (!tr) return [];
+      return tr.anchors.filter(
+        (a) => tr.points.filter((p) => p.floors[String(a)] != null).length >= 2,
+      );
+    });
+    watch(trendAnchors, (list) => {
+      if (list.length && (trendAnchor.value == null || !list.includes(trendAnchor.value)))
+        trendAnchor.value = list[Math.floor(list.length / 2)] ?? list[0]; // 가운데(중간 DPS) 기본
+    });
+    // 선택 앵커의 (시각, 가격) 시계열
+    const trendSeries = computed<{ t: number; p: number }[]>(() => {
+      const tr = board.value?.trend;
+      if (!tr || trendAnchor.value == null) return [];
+      const key = String(trendAnchor.value);
+      return tr.points
+        .filter((p) => p.floors[key] != null && isFinite(p.floors[key]))
+        .map((p) => ({ t: p.t, p: p.floors[key] }));
+    });
+    const trendDays = computed(() => {
+      const s = trendSeries.value;
+      if (s.length < 2) return 0;
+      return Math.max(1, Math.round((s[s.length - 1].t - s[0].t) / 86_400_000));
+    });
+    const trendChange = computed(() => {
+      const s = trendSeries.value;
+      if (s.length < 2) return null;
+      const a = s[0].p;
+      const b = s[s.length - 1].p;
+      if (a <= 0) return null;
+      const pct = Math.round(((b - a) / a) * 100);
+      if (pct === 0) return null;
+      return { up: pct > 0, pct: Math.abs(pct) };
+    });
+
+    const trendCanvasEl = ref<HTMLCanvasElement | null>(null);
+    function drawTrend() {
+      const cv = trendCanvasEl.value;
+      if (!cv) return;
+      const s = trendSeries.value;
+      const dpr = window.devicePixelRatio || 1;
+      const W = cv.clientWidth;
+      const H = cv.clientHeight;
+      cv.width = Math.round(W * dpr);
+      cv.height = Math.round(H * dpr);
+      const ctx = cv.getContext("2d")!;
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, W, H);
+      if (s.length < 2 || !board.value) return;
+      const P = { l: 54, r: 12, t: 10, b: 8 };
+      const t0 = s[0].t;
+      const t1 = s[s.length - 1].t;
+      const lo = Math.log10(Math.min(...s.map((x) => x.p)));
+      const hi = Math.log10(Math.max(...s.map((x) => x.p)));
+      const X = (t: number) => P.l + ((t - t0) / (t1 - t0 || 1)) * (W - P.l - P.r);
+      const Y = (p: number) =>
+        H - P.b - ((Math.log10(p) - lo) / (hi - lo || 1)) * (H - P.t - P.b);
+      // 가격 눈금(양끝)
+      ctx.font = "11px sans-serif";
+      ctx.fillStyle = "#9ca3af";
+      ctx.textAlign = "right";
+      ctx.fillText(formatEx(Math.pow(10, hi), board.value.rates), P.l - 6, P.t + 8);
+      ctx.fillText(formatEx(Math.pow(10, lo), board.value.rates), P.l - 6, H - P.b);
+      // 추세선 + 채움
+      const path = new Path2D();
+      s.forEach((x, i) => {
+        const px = X(x.t);
+        const py = Y(x.p);
+        i ? path.lineTo(px, py) : path.moveTo(px, py);
+      });
+      const fill = new Path2D(path);
+      fill.lineTo(X(t1), H - P.b);
+      fill.lineTo(X(t0), H - P.b);
+      fill.closePath();
+      const rising = s[s.length - 1].p >= s[0].p;
+      const col = rising ? "#d97066" : "#2dd4bf"; // 오르면 빨강(사기 나쁨), 내리면 청록
+      ctx.fillStyle = rising ? "rgba(217,112,102,0.10)" : "rgba(45,212,191,0.10)";
+      ctx.fill(fill);
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 2;
+      ctx.lineJoin = "round";
+      ctx.stroke(path);
+      // 최신 점
+      ctx.fillStyle = col;
+      ctx.beginPath();
+      ctx.arc(X(t1), Y(s[s.length - 1].p), 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    watch([trendSeries, board], () => nextTick(drawTrend), { flush: "post" });
+    watch(
+      () => props.config.wmWants,
+      () => nextTick(drawTrend),
+      { flush: "post" },
+    );
+
     return {
+      trendAnchor,
+      trendAnchors,
+      trendDays,
+      trendChange,
+      trendCanvasEl,
       board,
       loading,
       rateChips,

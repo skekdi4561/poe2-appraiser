@@ -24,10 +24,19 @@ interface SnapshotBow {
   mods?: string[];
   cond?: string | null;
 }
+export interface TrendPoint {
+  t: number;
+  floors: Record<string, number>; // 앵커 DPS(문자열) → 그때 최저가(엑잘)
+}
+export interface Trend {
+  anchors: number[];
+  points: TrendPoint[];
+}
 interface Snapshot {
   taken_at?: number;
   rates?: Record<string, { rate?: number } | number>;
   bows?: SnapshotBow[];
+  trend?: Trend | null;
 }
 
 export interface Row {
@@ -63,6 +72,7 @@ export interface MarketBoard {
   rates: Record<string, number>;
   rateFallback: boolean;
   staleKept: boolean; // 24h 이내가 부족해 낡은 매물로 대체했는가(수집 중단 추정) — index.html staleKept 와 같음
+  trend: Trend | null; // 가격 추세(앵커 DPS 별 최저가 시계열) — 없으면 null
 }
 
 let cached: { at: number; data: Snapshot | null } = { at: 0, data: null };
@@ -297,5 +307,6 @@ export async function marketBoard(): Promise<MarketBoard | null> {
     rates,
     rateFallback,
     staleKept,
+    trend: snap.trend ?? null,
   };
 }
