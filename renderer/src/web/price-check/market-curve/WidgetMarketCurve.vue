@@ -23,6 +23,23 @@
         ⚠ 24시간 넘은 낡은 시세입니다 — 수집이 멈췄을 수 있습니다.
       </div>
 
+      <!-- 통화 환율 (엑잘 기준) — 이미 수집된 rates 를 그대로 표시 -->
+      <div
+        v-if="board && rateChips.length"
+        class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm"
+        style="font-variant-numeric: tabular-nums"
+      >
+        <span class="text-gray-500" style="font-size: 12px; letter-spacing: 0.05em"
+          >환율</span
+        >
+        <span v-for="c in rateChips" :key="c.id" class="text-gray-300">
+          1 {{ c.label }}
+          <span class="text-gray-500">=</span>
+          <span class="text-yellow-300 font-medium">{{ c.ex }}</span>
+          <span class="text-gray-500">엑잘</span>
+        </span>
+      </div>
+
       <div v-if="loading" class="text-gray-400 py-12 text-center">
         시세 불러오는 중…
       </div>
@@ -312,6 +329,24 @@ export default defineComponent({
 
     const board = ref<MarketBoard | null>(null);
     const loading = ref(false);
+
+    // 통화 환율 칩 — 이미 수집된 rates 를 엑잘 기준으로 표시(엑잘 자신은 제외)
+    const rateChips = computed(() => {
+      const r = board.value?.rates;
+      if (!r) return [];
+      const order = [
+        { id: "divine", label: "디바인" },
+        { id: "annul", label: "소멸" },
+        { id: "chaos", label: "카오스" },
+      ];
+      return order
+        .filter((c) => typeof r[c.id] === "number" && r[c.id] > 1)
+        .map((c) => ({
+          ...c,
+          ex: r[c.id].toLocaleString("ko-KR", { maximumFractionDigits: 0 }),
+        }));
+    });
+
     const metric = ref<"total" | "phys" | "ele">("total");
     const metrics = [
       { id: "total" as const, label: "총 DPS" },
@@ -608,6 +643,7 @@ export default defineComponent({
     return {
       board,
       loading,
+      rateChips,
       metric,
       metrics,
       sortDesc,
