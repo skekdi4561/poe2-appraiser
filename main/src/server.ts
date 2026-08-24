@@ -51,7 +51,18 @@ if (!process.env.VITE_DEV_SERVER_URL) {
         break;
     }
 
-    fs.createReadStream(target).pipe(res);
+    // 없는 에셋이나 디렉터리 요청은 스트림 error(ENOENT/EISDIR)를 낸다 — 핸들러가 없으면
+    // 전역 uncaughtException 으로 새서 응답이 매달린다. 깔끔한 404 로 닫는다(uploads GET 과 동일).
+    const stream = fs.createReadStream(target);
+    stream.on("error", () => {
+      if (!res.headersSent) {
+        res.statusCode = 404;
+        res.end();
+      } else {
+        res.destroy();
+      }
+    });
+    stream.pipe(res);
   });
 }
 

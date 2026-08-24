@@ -20,7 +20,19 @@ export function addFileUploadRoutes(server: Server) {
       res.end();
       return;
     }
-    fs.createReadStream(target).pipe(res);
+    // 없는 파일이나 디렉터리(/uploads/ → target===uploadsPath) 요청은 스트림이 ENOENT/EISDIR
+    // error 를 낸다. 핸들러가 없으면 전역 uncaughtException 으로 새서 응답이 매달린 채 안 끝난다
+    // — 깔끔한 404 로 닫는다(헤더가 이미 나갔으면 소켓만 끊는다).
+    const stream = fs.createReadStream(target);
+    stream.on("error", () => {
+      if (!res.headersSent) {
+        res.statusCode = 404;
+        res.end();
+      } else {
+        res.destroy();
+      }
+    });
+    stream.pipe(res);
   });
 
   server.addListener("request", (req, res) => {
