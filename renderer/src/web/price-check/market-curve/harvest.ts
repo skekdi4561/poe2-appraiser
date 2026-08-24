@@ -107,28 +107,36 @@ function normalizeResult(res: any): HarvestRow | null {
 }
 /* eslint-enable */
 
-// 배치 업로드 — 5초 모아 한 번에, 실패는 조용히 버린다(사용자 경험 우선)
-const queue = new Map<string, HarvestRow>();
+// 배치 업로드 — 5초 모아 배치로 나눠 보내고, 실패는 조용히 버린다(사용자 경험 우선).
+// 한 검색이 최대 100행을 만들 수 있으므로 배치 초과분은 버리지 말고 이어서 보낸다.
+// 배치 30행: 실측 행 최대 788B × 30 ≈ 24KB — keepalive 본문 한도(64KB)의 절반 이하.
+export const FLUSH_MAX = 30;
+export const _queue = new Map<string, HarvestRow>(); // 테스트에서만 직접 접근
 let flushTimer: ReturnType<typeof setTimeout> | null = null;
 
-function flush() {
+export function _flush() {
   flushTimer = null;
-  if (!queue.size || !HARVEST_URL) return;
-  const rows = [...queue.values()].slice(0, 60);
-  queue.clear();
+  if (!_queue.size || !HARVEST_URL) return;
+  const rows: HarvestRow[] = [];
+  for (const [k, v] of _queue) {
+    rows.push(v);
+    _queue.delete(k);
+    if (rows.length >= FLUSH_MAX) break;
+  }
   fetch(HARVEST_URL + "/harvest", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ rows }),
     keepalive: true,
   }).catch(() => {});
+  if (_queue.size) flushTimer = setTimeout(_flush, 1000); // 남은 행 이어 보내기
 }
 
 export function harvestFetchResults(results: unknown[]) {
   if (!HARVEST_URL || !ctx.isBow || !isKakaoStandard()) return;
   for (const res of results) {
     const row = normalizeResult(res);
-    if (row?.id) queue.set(row.id, row);
+    if (row?.id) _queue.set(row.id, row);
   }
-  if (queue.size && !flushTimer) flushTimer = setTimeout(flush, 5000);
+  if (_queue.size && !flushTimer) flushTimer = setTimeout(_flush, 5000);
 }
