@@ -27,6 +27,15 @@ if (!process.env.VITE_DEV_SERVER_URL) {
       return;
 
     const filePath = req.url === "/" ? "/index.html" : req.url!;
+    // 경로 조작 방어: "/../../.." 요청이 path.join 으로 __dirname(앱 리소스)을 벗어나
+    // 임의 파일을 서빙하는 걸 막는다. 정상 에셋 경로는 항상 안에 남아 영향 0.
+    // (uploads GET 과 같은 계열 — 21회차에 고친 것을 이 라우트에도 적용.)
+    const target = path.resolve(__dirname, "." + filePath);
+    if (target !== __dirname && !target.startsWith(__dirname + path.sep)) {
+      res.statusCode = 403;
+      res.end();
+      return;
+    }
     switch (path.extname(filePath)) {
       case ".html":
         res.setHeader("content-type", "text/html");
@@ -42,7 +51,7 @@ if (!process.env.VITE_DEV_SERVER_URL) {
         break;
     }
 
-    fs.createReadStream(path.join(__dirname, filePath)).pipe(res);
+    fs.createReadStream(target).pipe(res);
   });
 }
 
