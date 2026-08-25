@@ -476,8 +476,13 @@ export default defineComponent({
     }
 
     async function load() {
+      const want = curWeapon.value; // 요청 시점의 무기를 고정
       loading.value = true;
-      board.value = await marketBoard(curWeapon.value); // 10분 캐시(무기별)라 매번 불러도 싸다
+      const b = await marketBoard(want); // 10분 캐시(무기별)라 매번 불러도 싸다
+      // 느린 fetch 가 도는 사이 사용자가 무기를 바꿨으면 이 결과는 버린다 — 안 그러면
+      // A 의 늦은 응답이 B 의 곡선을 덮어써 엉뚱한 무기가 뜬다(무기 전환 경합). 최신 load 가 loading 을 끈다.
+      if (want !== curWeapon.value) return;
+      board.value = b;
       loading.value = false;
     }
     watch(

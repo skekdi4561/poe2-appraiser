@@ -1,6 +1,6 @@
 // 시장 곡선 판정 — 감정소(serve.py/index.html)와 같은 픽스처·같은 답이어야 한다
 import { describe, it, expect } from "vitest";
-import { frontier, formatEx, matchesFilters, statOptions, metricRows, rowsFromSnapshot, RichRow, snapshotUrl } from "./appraiser";
+import { frontier, formatEx, matchesFilters, statOptions, metricRows, rowsFromSnapshot, RichRow, snapshotUrl, marketBoard } from "./appraiser";
 
 describe("snapshotUrl", () => {
   it("활은 latest.json, 다른 무기는 latest.<접미사>.json", () => {
@@ -8,6 +8,39 @@ describe("snapshotUrl", () => {
     expect(snapshotUrl()).toBe("https://skekdi4561.github.io/poe2-bow/latest.json");
     expect(snapshotUrl("crossbow")).toBe("https://skekdi4561.github.io/poe2-bow/latest.crossbow.json");
     expect(snapshotUrl("warstaff")).toBe("https://skekdi4561.github.io/poe2-bow/latest.warstaff.json");
+  });
+});
+
+describe("marketBoard 무기별 캐시 격리", () => {
+  it("무기마다 자기 URL 을 받고 서로 안 섞이며 캐시는 무기별로 동작", async () => {
+    const now = Date.now();
+    const mk = (pdps: number) => ({ rarity: "Rare", cur: "exalted", price: 5, t: now, pdps, edps: 0 });
+    const bySuffix: Record<string, unknown> = {
+      "https://skekdi4561.github.io/poe2-bow/latest.json": { taken_at: now, rates: {}, bows: [mk(100), mk(200)] },
+      "https://skekdi4561.github.io/poe2-bow/latest.crossbow.json": { taken_at: now, rates: {}, bows: [mk(300), mk(400)] },
+    };
+    const calls: string[] = [];
+    const orig = globalThis.fetch;
+    globalThis.fetch = (async (u: string) => {
+      calls.push(String(u));
+      return { ok: true, json: async () => bySuffix[String(u)] } as Response;
+    }) as typeof fetch;
+    try {
+      const bow = await marketBoard("");
+      const xbow = await marketBoard("crossbow");
+      const bow2 = await marketBoard(""); // 같은 무기 재요청 — 캐시에서, 새 fetch 없음
+      // 각 무기가 자기 데이터만 봄(섞이면 최고 DPS 가 어긋난다)
+      expect(Math.max(...bow!.rows.map((r) => r.pdps))).toBe(200);
+      expect(Math.max(...xbow!.rows.map((r) => r.pdps))).toBe(400);
+      expect(Math.max(...bow2!.rows.map((r) => r.pdps))).toBe(200);
+      // fetch 는 무기마다 한 번씩만(bow2 는 캐시 히트)
+      expect(calls).toEqual([
+        "https://skekdi4561.github.io/poe2-bow/latest.json",
+        "https://skekdi4561.github.io/poe2-bow/latest.crossbow.json",
+      ]);
+    } finally {
+      globalThis.fetch = orig;
+    }
   });
 });
 
