@@ -3,7 +3,11 @@
 // GitHub Pages 는 CORS 를 열어두므로 렌더러에서 바로 fetch 가 된다 — 별도 프로세스 0.
 // 판정·조건 필터 로직은 감정소(serve.py / index.html)와 같은 규칙의 TS 포트다.
 
-const SNAPSHOT_URL = "https://skekdi4561.github.io/poe2-bow/latest.json";
+const SNAPSHOT_BASE = "https://skekdi4561.github.io/poe2-bow/";
+// 활은 latest.json, 다른 공격무기는 latest.<접미사>.json (감정소 serve.py ATTACK_WEAPONS 규칙).
+export function snapshotUrl(suffix = ""): string {
+  return SNAPSHOT_BASE + (suffix ? `latest.${suffix}.json` : "latest.json");
+}
 const CACHE_MS = 10 * 60 * 1000; // 사이트 CDN 캐시와 같은 10분
 const ROW_TTL = 24 * 60 * 60 * 1000; // 감정소와 같은 규칙: 수집 24시간이 지난 매물은 제외
 // 환율 수집이 실패한 스냅샷에서도 축척이 살도록 — 감정소 RATE_DEFAULT 와 같은 값
@@ -75,26 +79,31 @@ export interface MarketBoard {
   trend: Trend | null; // 가격 추세(앵커 DPS 별 최저가 시계열) — 없으면 null
 }
 
-let cached: { at: number; data: Snapshot | null } = { at: 0, data: null };
-let inflight: Promise<Snapshot | null> | null = null;
+// 무기별로 캐시/inflight 를 따로 둔다 — 활과 다른 무기가 서로의 스냅샷을 덮어쓰지 않게.
+const cache = new Map<string, { at: number; data: Snapshot | null }>();
+const inflightBy = new Map<string, Promise<Snapshot | null>>();
 
-async function fetchSnapshot(): Promise<Snapshot | null> {
-  if (Date.now() - cached.at < CACHE_MS) return cached.data;
-  if (inflight) return inflight;
-  inflight = (async () => {
+async function fetchSnapshot(suffix = ""): Promise<Snapshot | null> {
+  const c = cache.get(suffix);
+  if (c && Date.now() - c.at < CACHE_MS) return c.data;
+  const pending = inflightBy.get(suffix);
+  if (pending) return pending;
+  const p = (async () => {
     try {
-      const r = await fetch(SNAPSHOT_URL);
+      const r = await fetch(snapshotUrl(suffix));
       const data = (await r.json()) as Snapshot;
-      cached = { at: Date.now(), data };
+      cache.set(suffix, { at: Date.now(), data });
       return data;
     } catch {
-      cached = { at: Date.now() - CACHE_MS + 60_000, data: cached.data }; // 실패 시 1분 뒤 재시도
-      return cached.data;
+      const prev = cache.get(suffix)?.data ?? null;
+      cache.set(suffix, { at: Date.now() - CACHE_MS + 60_000, data: prev }); // 실패 시 1분 뒤 재시도
+      return prev;
     } finally {
-      inflight = null;
+      inflightBy.delete(suffix);
     }
   })();
-  return inflight;
+  inflightBy.set(suffix, p);
+  return p;
 }
 
 const okRate = (v: unknown): v is number =>
@@ -287,8 +296,8 @@ export function rowsFromSnapshot(
 }
 
 // 스냅샷 → 24h 유효 매물(옵션 포함) + 옵션 목록 + 환율
-export async function marketBoard(): Promise<MarketBoard | null> {
-  const snap = await fetchSnapshot();
+export async function marketBoard(suffix = ""): Promise<MarketBoard | null> {
+  const snap = await fetchSnapshot(suffix);
   if (!snap?.bows?.length) return null;
 
   const { rates, fallbackCurs } = parseRates(snap);

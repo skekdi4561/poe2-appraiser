@@ -1,6 +1,15 @@
 // 시장 곡선 판정 — 감정소(serve.py/index.html)와 같은 픽스처·같은 답이어야 한다
 import { describe, it, expect } from "vitest";
-import { frontier, formatEx, matchesFilters, statOptions, metricRows, rowsFromSnapshot, RichRow } from "./appraiser";
+import { frontier, formatEx, matchesFilters, statOptions, metricRows, rowsFromSnapshot, RichRow, snapshotUrl } from "./appraiser";
+
+describe("snapshotUrl", () => {
+  it("활은 latest.json, 다른 무기는 latest.<접미사>.json", () => {
+    expect(snapshotUrl("")).toBe("https://skekdi4561.github.io/poe2-bow/latest.json");
+    expect(snapshotUrl()).toBe("https://skekdi4561.github.io/poe2-bow/latest.json");
+    expect(snapshotUrl("crossbow")).toBe("https://skekdi4561.github.io/poe2-bow/latest.crossbow.json");
+    expect(snapshotUrl("warstaff")).toBe("https://skekdi4561.github.io/poe2-bow/latest.warstaff.json");
+  });
+});
 
 describe("frontier", () => {
   it("전수 비교와 같은 판정", () => {

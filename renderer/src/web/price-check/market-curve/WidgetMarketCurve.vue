@@ -6,9 +6,21 @@
     >
       <!-- 헤더 -->
       <div class="flex items-baseline justify-between mb-3">
-        <span class="font-bold text-lg"
-          ><span class="text-yellow-500">활 시세</span> 감정소</span
-        >
+        <div class="flex items-baseline gap-2">
+          <span class="font-bold text-lg"
+            ><span class="text-yellow-500">{{ weaponName }} 시세</span> 감정소</span
+          >
+          <select
+            v-model="curWeapon"
+            @change="onWeaponChange"
+            class="bg-gray-900 rounded px-2 py-0.5 text-gray-200 text-sm"
+            aria-label="무기 종류"
+          >
+            <option v-for="w in WEAPONS" :key="w.suffix" :value="w.suffix">
+              {{ w.label }}
+            </option>
+          </select>
+        </div>
         <span v-if="board" class="text-sm text-gray-400"
           >매물 {{ filtered.length }}/{{ board.sample }}개 ·
           {{ board.ageHours < 1 ? "방금 전" : Math.round(board.ageHours) + "시간 전"
@@ -44,7 +56,11 @@
         시세 불러오는 중…
       </div>
       <div v-else-if="!board" class="text-gray-400 py-12 text-center">
-        시세 데이터를 불러오지 못했습니다
+        {{
+          curWeapon
+            ? weaponName + " 시세는 아직 수집되지 않았습니다"
+            : "시세 데이터를 불러오지 못했습니다"
+        }}
       </div>
 
       <template v-else>
@@ -318,6 +334,24 @@ import {
   Row,
 } from "./appraiser";
 
+// 감정소 serve.py ATTACK_WEAPONS / index.html WEAPONS 와 같은 순서·접미사·표시명.
+// 캐스터(완드·셉터·스태프)는 주문 옵션이 값을 정해 DPS 곡선과 무관하므로 제외.
+const WEAPONS: { suffix: string; label: string }[] = [
+  { suffix: "", label: "활" },
+  { suffix: "crossbow", label: "쇠뇌" },
+  { suffix: "onesword", label: "한손 검" },
+  { suffix: "twosword", label: "양손 검" },
+  { suffix: "oneaxe", label: "한손 도끼" },
+  { suffix: "twoaxe", label: "양손 도끼" },
+  { suffix: "onemace", label: "한손 철퇴" },
+  { suffix: "twomace", label: "양손 철퇴" },
+  { suffix: "spear", label: "창" },
+  { suffix: "flail", label: "플레일" },
+  { suffix: "claw", label: "클로" },
+  { suffix: "dagger", label: "단검" },
+  { suffix: "warstaff", label: "쿼터스태프" },
+];
+
 export default defineComponent({
   widget: {
     type: "market-curve",
@@ -431,9 +465,19 @@ export default defineComponent({
       showDrop.value = false;
     }
 
+    // 무기 선택 — 활은 접미사 "", 다른 공격무기는 latest.<접미사>.json 을 읽는다.
+    const curWeapon = ref("");
+    const weaponName = computed(
+      () => WEAPONS.find((w) => w.suffix === curWeapon.value)?.label ?? "활",
+    );
+    function onWeaponChange() {
+      filters.splice(0); // 이전 무기 기준 옵션 필터는 다른 무기엔 의미가 없다
+      load();
+    }
+
     async function load() {
       loading.value = true;
-      board.value = await marketBoard(); // 10분 캐시라 매번 불러도 싸다
+      board.value = await marketBoard(curWeapon.value); // 10분 캐시(무기별)라 매번 불러도 싸다
       loading.value = false;
     }
     watch(
@@ -787,6 +831,10 @@ export default defineComponent({
       trendCanvasEl,
       board,
       loading,
+      WEAPONS,
+      curWeapon,
+      weaponName,
+      onWeaponChange,
       rateChips,
       metric,
       metrics,
