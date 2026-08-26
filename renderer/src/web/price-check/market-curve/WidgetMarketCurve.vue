@@ -339,16 +339,9 @@ import {
 const WEAPONS: { suffix: string; label: string }[] = [
   { suffix: "", label: "활" },
   { suffix: "crossbow", label: "쇠뇌" },
-  { suffix: "onesword", label: "한손 검" },
-  { suffix: "twosword", label: "양손 검" },
-  { suffix: "oneaxe", label: "한손 도끼" },
-  { suffix: "twoaxe", label: "양손 도끼" },
   { suffix: "onemace", label: "한손 철퇴" },
   { suffix: "twomace", label: "양손 철퇴" },
   { suffix: "spear", label: "창" },
-  { suffix: "flail", label: "플레일" },
-  { suffix: "claw", label: "클로" },
-  { suffix: "dagger", label: "단검" },
   { suffix: "warstaff", label: "쿼터스태프" },
 ];
 
