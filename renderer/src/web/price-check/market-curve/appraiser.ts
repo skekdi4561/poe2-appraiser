@@ -11,11 +11,14 @@ export function snapshotUrl(suffix = ""): string {
 const CACHE_MS = 10 * 60 * 1000; // 사이트 CDN 캐시와 같은 10분
 const ROW_TTL = 24 * 60 * 60 * 1000; // 감정소와 같은 규칙: 수집 24시간이 지난 매물은 제외
 // 환율 수집이 실패한 스냅샷에서도 축척이 살도록 — 감정소 RATE_DEFAULT 와 같은 값
+// ⚠️ mirror 가 빠지면 rateOf 가 0 을 돌려 미러 가격 활이 '공짜'로 최전선을 점령한다
+// (감정소 index.html RATE_DEFAULT 와 같은 이유). 스냅샷 환율이 없을 때의 안전망.
 const DEFAULT_RATES: Record<string, number> = {
   exalted: 1,
   chaos: 65,
   divine: 300,
   annul: 279,
+  mirror: 2_000_000,
 };
 
 interface SnapshotBow {
