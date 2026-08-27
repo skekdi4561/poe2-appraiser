@@ -48,9 +48,13 @@ interface HarvestRow {
   league: string;
 }
 
-function isKakaoStandard(league: string): boolean {
-  // 감정소 데이터는 카카오 스탠다드 리그 기준 — 다른 시장을 섞으면 곡선이 오염된다
-  return AppConfig().language === "ko" && league === "Standard";
+function isKakaoRealm(): boolean {
+  // 감정소는 카카오(한국) 거래소만 다룬다 — 다른 realm 은 시장 자체가 다르다.
+  // ⚠️ 리그는 여기서 걸지 않는다. 예전에는 `league === "Standard"` 를 박아뒀는데
+  // 수집기는 도전 리그(Runes of Aldur)를 뜨고 있어서, 스탠다드 매물이 도전 리그
+  // 곡선에 섞여 들어갔다(같은 DPS 가 전혀 다른 가격이 된다). 리그는 행에 실어 보내고
+  // **수집기가 자기 리그와 대조해 거른다** — 그래야 리그가 바뀌어도 앱 수정이 필요 없다.
+  return AppConfig().language === "ko";
 }
 
 function toNumber(s: unknown): number {
@@ -157,7 +161,7 @@ export function _flush() {
 }
 
 export function harvestFetchResults(results: unknown[], ctx: HarvestCtx) {
-  if (!HARVEST_URL || !ctx.isBow || !isKakaoStandard(ctx.league)) return;
+  if (!HARVEST_URL || !ctx.isBow || !isKakaoRealm()) return;
   for (const res of results) {
     const row = normalizeResult(res, ctx.league);
     if (row?.id) _queue.set(row.id, row);

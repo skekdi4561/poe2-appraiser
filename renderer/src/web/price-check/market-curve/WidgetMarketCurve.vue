@@ -356,7 +356,9 @@ export default defineComponent({
       wmTitle: "",
       wmWants: "hide",
       wmZorder: null,
-      wmFlags: [],
+      // ESC 로 게임에 포커스를 돌려주면 위젯도 같이 닫힌다 — 없으면 그림만 남고
+      // 클릭만 안 먹어서 F7 을 한 번 더 눌러야 사라진다(가격체크 위젯과 같은 플래그).
+      wmFlags: ["hide-on-blur"],
       anchor: { pos: "cc", x: 50, y: 50 },
       toggleKey: "F7",
     }),
@@ -391,6 +393,14 @@ export default defineComponent({
           name: "OVERLAY->MAIN::focus-game",
           payload: undefined,
         });
+      }
+    });
+
+    // 이 위젯이 먼저 만들어진 설정에는 wmFlags 가 비어 있어 ESC 가 안 먹는다 —
+    // 저장된 설정을 그 자리에서 고쳐준다(가격체크 위젯이 쓰는 것과 같은 자가치유).
+    nextTick(() => {
+      if (!props.config.wmFlags.includes("hide-on-blur")) {
+        props.config.wmFlags = [...props.config.wmFlags, "hide-on-blur"];
       }
     });
 
