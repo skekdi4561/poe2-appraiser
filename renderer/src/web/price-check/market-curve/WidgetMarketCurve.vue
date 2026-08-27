@@ -396,11 +396,21 @@ export default defineComponent({
       }
     });
 
-    // 이 위젯이 먼저 만들어진 설정에는 wmFlags 가 비어 있어 ESC 가 안 먹는다 —
-    // 저장된 설정을 그 자리에서 고쳐준다(가격체크 위젯이 쓰는 것과 같은 자가치유).
-    nextTick(() => {
-      if (!props.config.wmFlags.includes("hide-on-blur")) {
-        props.config.wmFlags = [...props.config.wmFlags, "hide-on-blur"];
+    // ESC 로 위젯 닫기.
+    // wmFlags 의 "hide-on-blur" 는 새로 만들어지는 설정에만 붙고, 이미 저장된 설정에는
+    // 없다. 설정을 런타임에 고쳐 넣는 방법은 저장 시점(window blur)과 config-changed
+    // 교체 때문에 유실될 수 있어 실제로 안 먹었다(실측: config.json 에 wmFlags=[] 유지).
+    // 그래서 설정에 기대지 않고 **포커스 변화를 직접 듣는다** — ESC 는 게임에 포커스를
+    // 돌려주므로 focus-change{overlay:false} 가 온다.
+    // 열자마자 닫히는 사고를 막으려고, 한 번이라도 overlay:true 를 본 뒤에만 닫는다
+    // (F7 로 열 때 아직 포커스를 못 받은 순간의 이벤트에 반응하지 않게).
+    let sawOverlayFocus = false;
+    Host.onEvent("MAIN->OVERLAY::focus-change", (state) => {
+      if (state.overlay) {
+        sawOverlayFocus = true;
+      } else if (sawOverlayFocus && props.config.wmWants === "show") {
+        sawOverlayFocus = false;
+        wm.hide(props.config.wmId);
       }
     });
 

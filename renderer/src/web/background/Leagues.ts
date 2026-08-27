@@ -62,14 +62,12 @@ export const useLeagues = createGlobalState(() => {
       const leagueIsAlive = tradeLeagues.value.some(
         (league) => league.id === selectedId.value,
       );
-      if (!leagueIsAlive && !isPrivateLeague(selectedId.value ?? "")) {
-        if (tradeLeagues.value.length > 2) {
-          const TMP_CHALLENGE = 2;
-          selectedId.value = tradeLeagues.value[TMP_CHALLENGE].id;
-        } else {
-          const STANDARD = 0;
-          selectedId.value = tradeLeagues.value[STANDARD].id;
-        }
+      // 고른 리그가 없거나(첫 실행·마이그레이션으로 비움) 끝난 리그면 도전 리그를 고른다.
+      if (
+        (!selectedId.value || !leagueIsAlive) &&
+        !isPrivateLeague(selectedId.value ?? "")
+      ) {
+        selectedId.value = pickChallengeLeague(tradeLeagues.value);
       }
     } catch (e) {
       error.value = (e as Error).message;
@@ -87,6 +85,21 @@ export const useLeagues = createGlobalState(() => {
     load,
   };
 });
+
+// 그 시즌의 도전 리그를 고른다 — 목록에서 상시 리그(Standard/Hardcore)와 비공개 리그를
+// 뺀 첫 항목. 자리(인덱스)로 찍지 않으므로 **시즌이 바뀌어도 앱 수정이 필요 없다**
+// (예전 코드는 TMP_CHALLENGE = 2 라는 고정 인덱스를 썼다).
+// 감정소 시세가 도전 리그 기준이라 기본값도 거기에 맞춘다.
+const PERMANENT_LEAGUES = ["Standard", "Hardcore"];
+function pickChallengeLeague(list: League[]): string | undefined {
+  const challenge = list.find(
+    (l) =>
+      !PERMANENT_LEAGUES.includes(l.id) &&
+      !isPrivateLeague(l.id) &&
+      !l.id.includes("SSF"),
+  );
+  return (challenge ?? list[0])?.id;
+}
 
 function isPrivateLeague(id: string) {
   if (id.includes("Ruthless")) {

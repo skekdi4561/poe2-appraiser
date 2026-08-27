@@ -156,7 +156,7 @@ export interface Config {
 }
 
 export const defaultConfig = (): Config => ({
-  configVersion: 35,
+  configVersion: 36,
   overlayKey: "Shift + Space",
   overlayBackground: "rgba(129, 139, 149, 0.15)",
   overlayBackgroundClose: true,
@@ -685,6 +685,19 @@ function upgradeConfig(_config: Config): Config {
       });
     }
     config.configVersion = 35;
+  }
+
+  if (config.configVersion < 36) {
+    // 리그 기본값을 상시 리그(Standard)가 아니라 **그 시즌의 도전 리그**로.
+    // 감정소가 뜨는 시세는 도전 리그 기준이고, 대부분의 사용자도 거기서 논다 —
+    // 예전 기본값(Standard) 그대로면 가격 검색이 다른 시장을 보게 된다.
+    // 비워두면 Leagues.load() 가 목록에서 현재 도전 리그를 자동으로 고른다
+    // (시즌이 바뀌어도 앱 수정이 필요 없다). 한 번만 도는 마이그레이션이라
+    // 이후 사용자가 스스로 Standard 를 고르면 그대로 유지된다.
+    if (config.leagueId === "Standard") {
+      config.leagueId = undefined;
+    }
+    config.configVersion = 36;
   }
   /* eslint-enable */
 
