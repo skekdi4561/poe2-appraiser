@@ -11,11 +11,26 @@ import { AppConfig } from "@/web/Config";
 // 전역 ctx 를 async 응답 시점에 읽으면, 그 사이 다른 검색이 ctx 를 덮어써
 // 비-활(검 등, pdps 존재)이 활 데이터로 오염 업로드된다(실측 재현, 13회차).
 export interface HarvestCtx {
-  isBow: boolean;
+  cat: string | null; // 수집 대상이면 거래소 카테고리 id, 아니면 null
   league: string;
 }
+
+// 수집 대상 무기 — POE2 에 실제 있는 공격 무기 6종(캐스터 제외).
+// serve.py ATTACK_WEAPONS / 워커 CATEGORIES 와 같은 목록이어야 한다.
+// 검·도끼·단검·플레일·클로는 아직 게임에 없어 시장이 0건이다(실측).
+// ⚠️ pathofexile-trade 의 CATEGORY_TO_TRADE_ID 를 import 하면 순환 참조가 된다
+//    (그쪽이 이 파일을 import 한다) — 그래서 여기 따로 적는다.
+const COLLECTED_WEAPONS = new Map<ItemCategory, string>([
+  [ItemCategory.Bow, "weapon.bow"],
+  [ItemCategory.Crossbow, "weapon.crossbow"],
+  [ItemCategory.OneHandedMace, "weapon.onemace"],
+  [ItemCategory.TwoHandedMace, "weapon.twomace"],
+  [ItemCategory.Spear, "weapon.spear"],
+  [ItemCategory.Warstaff, "weapon.warstaff"],
+]);
+
 export function harvestCtxOf(item: ParsedItem, league: string): HarvestCtx {
-  return { isBow: item.category === ItemCategory.Bow, league };
+  return { cat: COLLECTED_WEAPONS.get(item.category!) ?? null, league };
 }
 
 // Cloudflare Worker 수합 엔드포인트 — 비어 있으면 수집 기능 전체가 꺼진다
@@ -46,6 +61,7 @@ interface HarvestRow {
   mods: string[];
   fee?: number;
   league: string;
+  cat: string; // 무기 종류 — 곡선이 무기별로 갈리므로 필수
 }
 
 function isKakaoRealm(): boolean {
@@ -105,7 +121,11 @@ function rarityOf(item: any): string {
 }
 
 // serve.py normalize() 의 TS 판 — null 이면 수집 대상이 아니다 (export 는 테스트 전용)
-export function normalizeResult(res: any, league: string): HarvestRow | null {
+export function normalizeResult(
+  res: any,
+  league: string,
+  cat = "weapon.bow",
+): HarvestRow | null {
   const item = res?.item ?? {};
   const listing = res?.listing ?? {};
   const price = listing.price ?? {};
@@ -131,6 +151,7 @@ export function normalizeResult(res: any, league: string): HarvestRow | null {
     // 카카오 즉시구매 매물은 수수료(fee)가 붙는다 — 수합 서버가 신뢰 필터로 쓴다
     fee: typeof listing.fee === "number" ? listing.fee : undefined,
     league,
+    cat,
   };
 }
 /* eslint-enable */
@@ -161,9 +182,9 @@ export function _flush() {
 }
 
 export function harvestFetchResults(results: unknown[], ctx: HarvestCtx) {
-  if (!HARVEST_URL || !ctx.isBow || !isKakaoRealm()) return;
+  if (!HARVEST_URL || !ctx.cat || !isKakaoRealm()) return;
   for (const res of results) {
-    const row = normalizeResult(res, ctx.league);
+    const row = normalizeResult(res, ctx.league, ctx.cat);
     if (row?.id) _queue.set(row.id, row);
   }
   if (_queue.size && !flushTimer) flushTimer = setTimeout(_flush, 5000);

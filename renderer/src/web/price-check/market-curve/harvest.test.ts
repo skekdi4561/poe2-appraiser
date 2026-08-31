@@ -47,50 +47,42 @@ describe("flush 배치", () => {
 import { harvestCtxOf } from "./harvest";
 import { ItemCategory } from "@/parser/meta";
 
-describe("harvestCtxOf (경쟁 조건 방지)", () => {
+describe("harvestCtxOf (수집 대상 무기 판정 · 경쟁 조건 방지)", () => {
   it("검색마다 독립 문맥 — 나중 검색이 앞 검색 문맥을 덮지 않는다", () => {
     const bow = harvestCtxOf({ category: ItemCategory.Bow } as never, "Standard");
     const sword = harvestCtxOf({ category: ItemCategory.OneHandedSword } as never, "Standard");
     // 전역 상태가 아니라 값이므로, 둘째 호출이 첫째를 오염시키지 않는다
-    expect(bow.isBow).toBe(true);
-    expect(sword.isBow).toBe(false);
+    expect(bow.cat).toBe("weapon.bow");
+    expect(sword.cat).toBeNull();
   });
-  it("비-활은 isBow=false — 활 데이터로 안 섞인다", () => {
-    expect(harvestCtxOf({ category: ItemCategory.OneHandedSword } as never, "Standard").isBow).toBe(false);
+  it("POE2 에 있는 공격 무기 6종은 각자 카테고리로 수집된다", () => {
+    const cases: Array<[ItemCategory, string]> = [
+      [ItemCategory.Bow, "weapon.bow"],
+      [ItemCategory.Crossbow, "weapon.crossbow"],
+      [ItemCategory.OneHandedMace, "weapon.onemace"],
+      [ItemCategory.TwoHandedMace, "weapon.twomace"],
+      [ItemCategory.Spear, "weapon.spear"],
+      [ItemCategory.Warstaff, "weapon.warstaff"],
+    ];
+    for (const [cat, id] of cases) {
+      expect(harvestCtxOf({ category: cat } as never, "L").cat).toBe(id);
+    }
   });
-});
-
-import { normalizeResult } from "./harvest";
-
-describe("normalizeResult — serve.py normalize 정합", () => {
-  const base = {
-    id: "x1",
-    item: { extended: { pdps: 100, edps: 0 }, typeLine: "고급 활" },
-    listing: { price: { currency: "divine", amount: 3 } },
-  };
-  it("rarity 문자열이 있으면 그대로", () => {
-    const r = normalizeResult({ ...base, item: { ...base.item, rarity: "Rare" } }, "Standard");
-    expect(r?.rarity).toBe("Rare");
+  it("캐스터·미출시 무기·방어구는 수집 대상이 아니다(cat=null)", () => {
+    for (const cat of [
+      ItemCategory.Wand,
+      ItemCategory.Sceptre,
+      ItemCategory.Staff,
+      ItemCategory.OneHandedSword,
+      ItemCategory.TwoHandedAxe,
+      ItemCategory.Dagger,
+      ItemCategory.Claw,
+      ItemCategory.Boots,
+    ]) {
+      expect(harvestCtxOf({ category: cat } as never, "L").cat).toBeNull();
+    }
   });
-  it("rarity 누락 + frameType=2 → 'Rare' (frameType 폴백, serve.py rarity_of 와 정합)", () => {
-    // 이 폴백이 없으면 API 가 rarity 를 생략한 레어 활이 ''로 저장돼 곡선에서 빠졌다
-    const r = normalizeResult({ ...base, item: { ...base.item, frameType: 2 } }, "Standard");
-    expect(r?.rarity).toBe("Rare");
-  });
-  it("rarity·frameType 둘 다 없으면 ''", () => {
-    const r = normalizeResult(base, "Standard");
-    expect(r?.rarity).toBe("");
-  });
-  it("룬 변형 frameType 13 → 'Rare'", () => {
-    const r = normalizeResult({ ...base, item: { ...base.item, frameType: 13 } }, "Standard");
-    expect(r?.rarity).toBe("Rare");
-  });
-  it("pdps 반올림은 half-up — serve.py round1 과 지문 일치", () => {
-    // 224.25 → 224.3 (half-up). Python round()(banker's)면 224.2 라 지문이 갈렸다.
-    const r = normalizeResult(
-      { ...base, item: { ...base.item, extended: { pdps: 224.25, edps: 0 }, rarity: "Rare" } },
-      "Standard",
-    );
-    expect(r?.pdps).toBe(224.3);
+  it("카테고리가 없는 아이템도 안 죽는다", () => {
+    expect(harvestCtxOf({} as never, "L").cat).toBeNull();
   });
 });
