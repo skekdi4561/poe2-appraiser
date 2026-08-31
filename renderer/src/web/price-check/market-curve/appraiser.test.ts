@@ -1,6 +1,6 @@
 // 시장 곡선 판정 — 감정소(serve.py/index.html)와 같은 픽스처·같은 답이어야 한다
 import { describe, it, expect } from "vitest";
-import { frontier, formatEx, matchesFilters, statOptions, metricRows, rowsFromSnapshot, RichRow, snapshotUrl, marketBoard } from "./appraiser";
+import { frontier, formatEx, matchesFilters, statOptions, metricRows, rowsFromSnapshot, RichRow, snapshotUrl, marketBoard, optRank } from "./appraiser";
 
 describe("snapshotUrl", () => {
   it("활은 latest.json, 다른 무기는 latest.<접미사>.json", () => {
@@ -174,5 +174,25 @@ describe("rowsFromSnapshot staleKept", () => {
     const r = rowsFromSnapshot(snap, rates, fb, now);
     expect(r.rows.length).toBe(2);
     expect(r.staleKept).toBe(false);
+  });
+});
+
+describe("optRank (옵션 표시 순서)", () => {
+  it("무기 성능 직결이 위, 반려수는 아래 — 감정소 index.html 과 같은 규칙", () => {
+    expect(optRank("모든 투사체 스킬 레벨 #")).toBe(0);
+    expect(optRank("치명타 확률 #%")).toBe(0);
+    expect(optRank("물리 공격 피해의 #%를 생명력으로 흡수")).toBe(0);
+    expect(optRank("정확도 #")).toBe(1);
+    expect(optRank("반려수의 공격 속도 #% 증가")).toBe(2);
+  });
+  it("statOptions 가 빈도보다 유용도를 먼저 본다", () => {
+    const rows: RichRow[] = [];
+    // 반려수 옵션이 더 흔해도(3) 스킬 레벨(2)보다 아래여야 한다
+    for (let i = 0; i < 3; i++)
+      rows.push({ pdps: 1, edps: 0, p: 1, t: 0, offs: { "반려수의 공격 속도 #% 증가": 10 } });
+    for (let i = 0; i < 2; i++)
+      rows[i].offs["모든 투사체 스킬 레벨 #"] = 2;
+    const s = statOptions(rows);
+    expect(s[0].key).toBe("모든 투사체 스킬 레벨 #");
   });
 });

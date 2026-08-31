@@ -141,7 +141,7 @@ function parseRates(snap: Snapshot): {
 const COUNTED = [
   /increased Physical Damage|^물리 피해 [\d.]+% 증가/i,
   /Adds \d|피해 \d+~\d+ 추가/i,
-  /increased Attack Speed|^공격 속도 [\d.]+% 증가/i,
+  /increased Attack Speed|reduced Attack Speed|^공격 속도 [\d.]+% (증가|감소)/i,
 ];
 const JUNK_MOD = /^결속됨|시야 반경|Light Radius|투사체 사거리|능력치 요구사항/;
 const JUNK_EXACT = new Set(["민첩 #", "힘 #", "지능 #", "모든 능력치 #"]);
@@ -177,6 +177,19 @@ function offMods(mods: string[]): Record<string, number> {
   return out;
 }
 
+// 옵션 표시 순서 — 감정소 index.html 의 optRank/byUsefulness 와 같은 규칙이어야 한다.
+// 빈도만으로 줄세우면 유용도와 어긋난다(실측: 활에서 "반려수의 공격 속도" 133 이
+// "모든 투사체 스킬 레벨" 120 보다 위였다 — 앞은 동료 빌드 전용이라 무기 값과 거의 무관).
+//   0 = 무기 성능 직결 / 1 = 그 외 / 2 = 무기가 아닌 대상(반려수·소환수)
+const OPT_TOP =
+  /스킬 레벨|치명타|흡수|추가로 발사|추가 화살|Skill Level|Critical|Leech/;
+const OPT_BOTTOM = /반려수|소환수|Companion|Minion/;
+export function optRank(key: string): number {
+  if (OPT_BOTTOM.test(key)) return 2;
+  if (OPT_TOP.test(key)) return 0;
+  return 1;
+}
+
 // 24h 매물에서 관측된 옵션 전체 목록 — 거래소 필터처럼 검색해 고른다
 export function statOptions(rows: RichRow[]): StatOption[] {
   const agg = new Map<string, { n: number; lo: number; hi: number }>();
@@ -193,7 +206,7 @@ export function statOptions(rows: RichRow[]): StatOption[] {
   return [...agg.entries()]
     .filter(([, a]) => a.n >= 2) // 곡선이 성립하려면 최소 2개
     .map(([key, a]) => ({ key, n: a.n, lo: a.lo, hi: a.hi }))
-    .sort((a, b) => b.n - a.n);
+    .sort((a, b) => optRank(a.key) - optRank(b.key) || b.n - a.n);
 }
 
 // 필터 행 전부 만족해야 통과. min/max 비우면 "옵션 존재"만 본다.
