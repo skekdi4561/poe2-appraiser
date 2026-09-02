@@ -1,5 +1,6 @@
 {
   "name": "poe2-sise",
+  "productName": "PoE2 시세 감정소",
   "version": "0.1.0",
   "private": true,
   "scripts": {
