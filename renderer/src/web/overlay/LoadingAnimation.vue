@@ -8,6 +8,7 @@
         <div class="py-2 px-4">
           <div class="text-base">PoE2 시세 감정소</div>
           <p>{{ t("app_is_ready") }}</p>
+          <p class="text-gray-400 text-sm">Ctrl+D 가격 검색 · F7 시세 곡선 · Shift+Space 설정</p>
         </div>
       </div>
     </div>

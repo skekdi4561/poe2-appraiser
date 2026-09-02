@@ -35,9 +35,10 @@
     "electron-devtools-installer": "^4.0.0",
     "electron-updater": "^6.8.3",
     "esbuild": "^0.28.0",
-    "ini": "^6.0.0",
     "eslint-config-prettier": "^9.1.0",
+    "ini": "^6.0.0",
     "prettier": "3.4.2",
+    "rcedit": "^5.0.2",
     "typescript": "5.9.x",
     "ws": "^8.16.0"
   },

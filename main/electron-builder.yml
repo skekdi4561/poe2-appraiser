@@ -16,6 +16,12 @@ files:
     to: "."
 extraMetadata:
   main: "main.js"
+# 원저작권 고지(MIT "shall be included in all copies") — 설치 폴더 resources/LICENSE.txt
+extraResources:
+  - from: "../LICENSE"
+    to: "LICENSE.txt"
+# signAndEditExecutable 을 끈 대신 여기서 rcedit 로 아이콘·버전 정보를 찍는다(아래 win 주석 참고)
+afterPack: "build/afterPack.js"
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
@@ -24,7 +30,9 @@ portable:
   artifactName: "PoE2-SiseGamjeongso-Portable-${version}.${ext}"
 win:
   # winCodeSign(legacy 7z)의 darwin 심볼릭 링크가 Windows 추출에서 실패해 rcedit 가
-  # exe 를 반쯤 스탬핑하다 즉사 바이너리를 만든다 — 편집 단계를 끄고 rcedit 는 빌드 후 직접 실행
+  # exe 를 반쯤 스탬핑하다 즉사 바이너리를 만든다 — 편집 단계를 끄고 build/afterPack.js 가
+  # rcedit(npm 패키지 동봉 바이너리)로 아이콘·ProductName 을 찍는다. 안 찍으면 바탕화면 바로가기와
+  # 작업 관리자에 Electron 기본 아이콘·"Electron / GitHub, Inc." 가 그대로 노출된다(배포 점검에서 확인).
   signAndEditExecutable: false
   target:
     - "nsis"

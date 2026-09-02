@@ -2,6 +2,8 @@
   "please_wait": "잠시만 기다려주세요…",
   "choose_file": "파일을 선택해주세요",
   "app_is_ready": "가 준비되었고 실행 중입니다.",
+  "wrong_language": "POE2 언어가 앱 언어와 다릅니다",
+  "wrong_language_help": "POE2 는 {0} 인데 앱은 {1} 로 설정되어 있습니다",
   "reopen_settings": "{0}을 눌러서 편집을 계속하세요.",
   "seconds": "초",
   "league": "리그",

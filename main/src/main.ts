@@ -34,6 +34,9 @@ import fs from "node:fs";
     console.warn("legacy config copy failed", e);
   }
   app.setPath("userData", userData);
+  // productName 이 User-Agent 토큰이 된다("PoE2시세감정소/0.1.0") — 비ASCII 헤더가 카카오 거래소로
+  // 나가는 것은 검증된 적이 없으니 ASCII 로 바꾼다(원본은 "exiled-exchange-2/버전" 형태였다).
+  app.userAgentFallback = app.userAgentFallback.replace(/PoE2\s?시세\s?감정소/g, "poe2-sise");
 }
 
 if (!app.requestSingleInstanceLock()) {
