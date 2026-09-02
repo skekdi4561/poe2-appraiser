@@ -1,11 +1,11 @@
 publish:
   - "github"
-appId: "com.skekdi4561.poe2-appraiser"
+appId: "com.skekdi4561.poe2-sise"
 # 신형 서명 툴셋: 플랫폼별 zip 이라 legacy 아카이브의 darwin 심볼릭 링크 문제
 # (Windows 에서 추출 실패 → rcedit 가 exe 를 반쯤 스탬핑해 즉사 바이너리 생성)가 없다
 toolsets:
   winCodeSign: "1.1.0"
-productName: "POE2 Appraiser"
+productName: "PoE2 시세 감정소"   # 표시 이름(설치 화면·시작 메뉴·트레이). 파일명은 아래 artifactName(ASCII)
 npmRebuild: false
 files:
   - "package.json"
@@ -19,6 +19,9 @@ extraMetadata:
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
+  artifactName: "PoE2-SiseGamjeongso-Setup-${version}.${ext}"
+portable:
+  artifactName: "PoE2-SiseGamjeongso-Portable-${version}.${ext}"
 win:
   # winCodeSign(legacy 7z)의 darwin 심볼릭 링크가 Windows 추출에서 실패해 rcedit 가
   # exe 를 반쯤 스탬핑하다 즉사 바이너리를 만든다 — 편집 단계를 끄고 rcedit 는 빌드 후 직접 실행

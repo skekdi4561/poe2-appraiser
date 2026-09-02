@@ -165,7 +165,7 @@ export class OverlayWindow {
         // ----------------------
         "Path of Exile 2 is running with administrator rights.\n" +
           "\n" +
-          "You need to restart Exiled Exchange 2 with administrator rights.",
+          "PoE2 시세 감정소를 관리자 권한으로 다시 실행해야 합니다.",
       );
     } else {
       this.server.sendEventTo("broadcast", {

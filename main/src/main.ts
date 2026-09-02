@@ -16,6 +16,25 @@ import { GameLogWatcher } from "./host-files/GameLogWatcher";
 import { HttpProxy } from "./proxy";
 import { installExtension, VUEJS_DEVTOOLS } from "electron-devtools-installer";
 import { FileWriter } from "./host-files/FileWriter";
+import path from "node:path";
+import fs from "node:fs";
+
+// 설정 폴더는 표시 이름(한글 productName)과 무관한 ASCII 경로에 고정한다 — 기본값은 productName 에서
+// 파생되어 이름을 바꾸면 설정이 통째로 초기화되고, 한글 경로는 네이티브 모듈에 변수가 된다.
+// 옛 이름(poe2-appraiser)으로 쓰던 설정은 첫 실행 때 한 번 복사해 온다(락·ConfigStore 보다 먼저).
+{
+  const appData = app.getPath("appData");
+  const userData = path.join(appData, "poe2-sise");
+  const legacy = path.join(appData, "poe2-appraiser", "apt-data");
+  try {
+    if (!fs.existsSync(path.join(userData, "apt-data")) && fs.existsSync(legacy)) {
+      fs.cpSync(legacy, path.join(userData, "apt-data"), { recursive: true });
+    }
+  } catch (e) {
+    console.warn("legacy config copy failed", e);
+  }
+  app.setPath("userData", userData);
+}
 
 if (!app.requestSingleInstanceLock()) {
   app.exit();
