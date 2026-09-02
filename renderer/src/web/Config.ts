@@ -156,7 +156,7 @@ export interface Config {
 }
 
 export const defaultConfig = (): Config => ({
-  configVersion: 36,
+  configVersion: 37,
   overlayKey: "Shift + Space",
   overlayBackground: "rgba(129, 139, 149, 0.15)",
   overlayBackgroundClose: true,
@@ -698,6 +698,24 @@ function upgradeConfig(_config: Config): Config {
       config.leagueId = undefined;
     }
     config.configVersion = 36;
+  }
+
+  if (config.configVersion < 37) {
+    // 시장 곡선 위젯은 단일 인스턴스라 지우면 F7 이 영영 죽는다. removable=false 는 앞으로의 삭제만
+    // 막으므로, 이미 지운 설정(35~36)은 여기서 한 번 되살린다(위 <35 블록과 같은 기본값).
+    if (!config.widgets.some((w) => w.wmType === "market-curve")) {
+      config.widgets.push({
+        wmId: Math.max(0, ...config.widgets.map((w) => w.wmId as number)) + 1,
+        wmType: "market-curve",
+        wmTitle: "",
+        wmWants: "hide",
+        wmZorder: null,
+        wmFlags: [],
+        anchor: { pos: "cc", x: 50, y: 50 },
+        toggleKey: "F7",
+      });
+    }
+    config.configVersion = 37;
   }
   /* eslint-enable */
 
