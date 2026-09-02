@@ -1,6 +1,6 @@
 // 시장 곡선 판정 — 감정소(serve.py/index.html)와 같은 픽스처·같은 답이어야 한다
-import { describe, it, expect } from "vitest";
-import { frontier, formatEx, matchesFilters, statOptions, metricRows, rowsFromSnapshot, RichRow, snapshotUrl, marketBoard, optRank } from "./appraiser";
+import { describe, it, expect, vi } from "vitest";
+import { frontier, formatEx, matchesFilters, statOptions, metricRows, rowsFromSnapshot, RichRow, snapshotUrl, marketBoard, optRank, isOffDps, priceTicks } from "./appraiser";
 
 describe("snapshotUrl", () => {
   it("활은 latest.json, 다른 무기는 latest.<접미사>.json", () => {
@@ -196,5 +196,93 @@ describe("optRank (옵션 표시 순서)", () => {
       rows[i].offs["모든 투사체 스킬 레벨 #"] = 2;
     const s = statOptions(rows);
     expect(s[0].key).toBe("모든 투사체 스킬 레벨 #");
+  });
+});
+
+describe("rowsFromSnapshot rarity (V27)", () => {
+  const rates = { exalted: 1 };
+  const fb = new Set<string>();
+  const now = 3_000_000_000_000;
+  const mk = (rarity: string | undefined) => ({ rarity, cur: "exalted", price: 5, pdps: 300, edps: 0, t: now });
+  it("rarity '' 와 누락은 Rare 로 포함, Magic/Unique 는 제외 — 사이트·serve.py 와 같은 규칙", () => {
+    const snap = { taken_at: now, bows: [mk(""), mk(undefined), mk("Rare"), mk("Magic"), mk("Unique")] };
+    // '' 가 빠지면 2 — `??` 로 이식하면 '' 가 그대로 남아 Rare 필터에서 탈락한다
+    expect(rowsFromSnapshot(snap, rates, fb, now).rows).toHaveLength(3);
+  });
+});
+
+describe("matchesFilters 열쇠 존재 판정 (V08/V26)", () => {
+  const zero = { "불리언 옵션": 0 };
+  it("값이 0 인 옵션도 열쇠가 있으면 존재로 본다", () => {
+    // 값으로 존재를 판정하면 0 이 '없음'이 되어 이 필터가 죽는다
+    expect(matchesFilters(zero, [{ key: "불리언 옵션", min: null, max: null }])).toBe(true);
+    // 열쇠가 있어도 min/max 는 여전히 값으로 판정한다
+    expect(matchesFilters(zero, [{ key: "불리언 옵션", min: 1, max: null }])).toBe(false);
+  });
+});
+
+describe("isOffDps (COUNTED — 거래소 DPS 에 이미 든 옵션 판정, V57)", () => {
+  it("조건부 추가 피해는 DPS 밖, 무조건 추가 피해는 DPS 안 — serve.py/index.html 과 3표면 동일", () => {
+    // 접두 조건이 붙은 추가 피해를 COUNTED 로 삼키면 필터 후보에서 사라진다
+    expect(isOffDps("감전된 적에게 번개 피해 1~60 추가")).toBe(true);
+    // 무조건 추가 피해가 COUNTED 에서 빠지면 DPS 에 이미 든 옵션이 필터에 중복 등장한다
+    expect(isOffDps("번개 피해 19~420 추가")).toBe(false);
+    expect(isOffDps("[Physical|물리] 피해 19~30 추가")).toBe(false); // 게임 마크업을 벗긴 뒤 판정
+    expect(isOffDps("Adds 19 to 420 Lightning Damage")).toBe(false);
+  });
+});
+
+describe("priceTicks (가격축 눈금, V43)", () => {
+  it("가격 폭이 한 자릿수(decade) 안이면 10^k 눈금이 없어 양 끝값으로 대신한다", () => {
+    // 폴백이 없으면 12~85 ex 에서 눈금 0개 — 축이 빈다
+    expect(priceTicks(Math.log10(12), Math.log10(85), 12, 85)).toEqual([12, 85]);
+  });
+  it("10^k 눈금이 하나뿐이어도 양 끝값으로 (2개 미만 폴백)", () => {
+    // `< 2` 를 `< 1` 로 바꾸면 [10] 하나만 남아 여기서 잡힌다
+    expect(priceTicks(Math.log10(5), Math.log10(50), 5, 50)).toEqual([5, 50]);
+  });
+  it("여러 자릿수를 걸치면 10 의 거듭제곱만", () => {
+    expect(priceTicks(Math.log10(3), Math.log10(3000), 3, 3000)).toEqual([10, 100, 1000]);
+  });
+});
+
+describe("fetchSnapshot 타임아웃 (V28)", () => {
+  it("fetch 에 AbortSignal.timeout(15초) 를 넘기고, 끊기면 이전 캐시로 돌아간다", async () => {
+    const now = Date.now();
+    const mk = (pdps: number) => ({ rarity: "Rare", cur: "exalted", price: 5, t: now, pdps, edps: 0 });
+    const ac = new AbortController();
+    // 실제 15초를 기다릴 수 없으니 타임아웃 신호를 손에 쥔 것으로 바꿔치기한다
+    const timeoutSpy = vi.spyOn(AbortSignal, "timeout").mockReturnValue(ac.signal);
+    const signals: unknown[] = [];
+    let calls = 0;
+    const orig = globalThis.fetch;
+    globalThis.fetch = ((_u: string, init: RequestInit) => {
+      signals.push(init.signal);
+      if (++calls === 1)
+        return Promise.resolve({ ok: true, json: async () => ({ taken_at: now, rates: {}, bows: [mk(100), mk(200)] }) } as Response);
+      // 응답이 영원히 안 오는 서버 — 신호가 끊길 때만 실패한다(실제 fetch 와 같은 계약)
+      return new Promise((_, rej) => init.signal!.addEventListener("abort", () => rej(new Error("aborted"))));
+    }) as typeof fetch;
+    try {
+      const first = await marketBoard("warstaff");
+      expect(first).not.toBeNull();
+      // 타임아웃이 빠지거나 값이 바뀌면 여기서 잡힌다
+      expect(timeoutSpy).toHaveBeenCalledWith(15_000);
+      // 신호가 fetch 까지 실제로 전달돼야 멎은 응답을 끊을 수 있다
+      expect(signals[0]).toBe(ac.signal);
+
+      vi.useFakeTimers();
+      vi.setSystemTime(now + 11 * 60 * 1000); // 10분 캐시 만료 → 재요청
+      const pending = marketBoard("warstaff");
+      expect(calls).toBe(2);
+      ac.abort();
+      // 끊김을 삼키지 않으면 load() 가 영원히 pending — 이전 캐시(첫 응답)로 돌아와야 한다
+      const second = await pending;
+      expect(second?.rows.map((r) => r.pdps).sort()).toEqual(first!.rows.map((r) => r.pdps).sort());
+    } finally {
+      globalThis.fetch = orig;
+      vi.useRealTimers();
+      timeoutSpy.mockRestore();
+    }
   });
 });

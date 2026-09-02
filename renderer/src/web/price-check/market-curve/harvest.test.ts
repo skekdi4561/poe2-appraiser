@@ -132,3 +132,37 @@ describe("normalizeResult 미러 가격", () => {
     expect(r?.cur).toBe("mirror");
   });
 });
+
+import { poeWebApi } from "@/web/Config";
+import { harvestFetchResults } from "./harvest";
+
+// specs/vitest.setup.ts 의 전역 스텁에는 poeWebApi 가 없다 — 여기서 realm 판정만 갈아 끼운다
+vi.mock("@/web/Config", () => ({ poeWebApi: vi.fn() }));
+
+describe("harvestFetchResults realm 게이트 (V42 — UI 언어가 아니라 실제 질의 호스트)", () => {
+  const ctx = { cat: "weapon.bow", league: "L" };
+  const res = {
+    id: "k1",
+    item: { extended: { pdps: 100, edps: 0 }, typeLine: "활", rarity: "Rare" },
+    listing: { price: { currency: "divine", amount: 3 } },
+  };
+  beforeEach(() => {
+    _queue.clear();
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    _queue.clear();
+    vi.runAllTimers(); // 5초 flush 타이머를 비워 다음 테스트로 새지 않게
+    vi.useRealTimers();
+  });
+  it("국제 서버(www) 응답은 큐에 넣지 않는다 — ko + '선호 거래 사이트=www' 오염 방지", () => {
+    vi.mocked(poeWebApi).mockReturnValue("www.pathofexile.com");
+    harvestFetchResults([res], ctx);
+    expect(_queue.size).toBe(0); // 언어로 판정하면 여기서 1 이 된다
+  });
+  it("카카오 거래소 응답은 큐에 넣는다", () => {
+    vi.mocked(poeWebApi).mockReturnValue("poe.kakaogames.com");
+    harvestFetchResults([res], ctx);
+    expect(_queue.size).toBe(1); // 게이트가 뒤집히면 수집이 통째로 꺼진다
+  });
+});

@@ -332,6 +332,7 @@ import {
   formatEx,
   matchesFilters,
   metricRows,
+  priceTicks,
   MarketBoard,
   StatOption,
   StatFilter,
@@ -612,10 +613,7 @@ export default defineComponent({
       ctx.fillStyle = "#9ca3af";
       ctx.textAlign = "right";
       ctx.lineWidth = 1;
-      const ticks: number[] = [];
-      for (let k = Math.ceil(lo); k <= Math.floor(hi); k++) ticks.push(Math.pow(10, k));
-      // 가격 폭이 한 자릿수(decade) 안이면 10^k 눈금이 0~1개라 축이 빈다 — 양 끝값으로 대신 표시
-      if (ticks.length < 2) ticks.splice(0, ticks.length, f[0].p, f[f.length - 1].p);
+      const ticks = priceTicks(lo, hi, f[0].p, f[f.length - 1].p);
       for (const p of ticks) {
         const y = Y(p);
         ctx.beginPath();

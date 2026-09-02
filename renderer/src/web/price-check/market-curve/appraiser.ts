@@ -162,7 +162,7 @@ const modVal = (m: string) => {
   const n = String(m).match(/[\d.]+/);
   return n ? +n[0] : 0;
 };
-const isOffDps = (m: string) => !COUNTED.some((re) => re.test(cleanMod(m)));
+export const isOffDps = (m: string) => !COUNTED.some((re) => re.test(cleanMod(m)));
 
 // 활 하나의 { 옵션 열쇠: 값 } — 같은 열쇠가 여러 번이면 큰 값
 function offMods(mods: string[]): Record<string, number> {
@@ -270,6 +270,14 @@ export function formatEx(vEx: number, rates: Record<string, number>): string {
     maximumFractionDigits: d,
   });
   return num + (useDiv ? " div" : " ex");
+}
+
+// 가격축 눈금 — lo/hi 는 log10 가격, first/last 는 최전선 양 끝 가격(엑잘).
+// 10 의 거듭제곱 눈금이 2개 미만(가격 폭이 한 자릿수 안)이면 축이 비므로 양 끝값으로 대신한다.
+export function priceTicks(lo: number, hi: number, first: number, last: number): number[] {
+  const ticks: number[] = [];
+  for (let k = Math.ceil(lo); k <= Math.floor(hi); k++) ticks.push(Math.pow(10, k));
+  return ticks.length < 2 ? [first, last] : ticks;
 }
 
 // 신뢰 경계(네트워크 fetch JSON)에서 숫자를 강제한다 — pdps 가 문자열 "227" 로
