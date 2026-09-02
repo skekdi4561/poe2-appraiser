@@ -17,7 +17,9 @@
         </div>
       </div>
     </div>
+    <!-- 후원자 배너는 후원자 데이터가 있을 때만 — 원작(EE2)의 후원자 명단을 이 포크의 것처럼 보이게 하지 않는다 -->
     <div
+      v-if="hasPatrons"
       :class="[$style.patronsHorizontal, { invisible: podiumVisible }]"
       :onMouseenter="showPodium"
     >
@@ -325,6 +327,7 @@ export default defineComponent({
         });
       }),
       podiumVisible,
+      hasPatrons: computed(() => APP_PATRONS.length > 0),
       showPodium() {
         podiumVisible.value = true;
       },
