@@ -93,7 +93,7 @@ async function fetchSnapshot(suffix = ""): Promise<Snapshot | null> {
   if (pending) return pending;
   const p = (async () => {
     try {
-      const r = await fetch(snapshotUrl(suffix));
+      const r = await fetch(snapshotUrl(suffix), { signal: AbortSignal.timeout(15_000) });   // 멎은 응답에 모든 load() 가 묶이지 않게
       const data = (await r.json()) as Snapshot;
       cache.set(suffix, { at: Date.now(), data });
       return data;
@@ -140,7 +140,7 @@ function parseRates(snap: Snapshot): {
 // 같은 무관 옵션까지 삼키므로 index.html 과 같은 엄격한 패턴을 유지할 것.
 const COUNTED = [
   /increased Physical Damage|^물리 피해 [\d.]+% 증가/i,
-  /Adds \d|피해 \d+~\d+ 추가/i,
+  /^Adds \d|^(?:\S+ )?피해 \d+~\d+ 추가/i,   // 접두 조건('감전된 적에게 …')이 붙은 추가 피해는 거래소 DPS 밖
   /increased Attack Speed|reduced Attack Speed|^공격 속도 [\d.]+% (증가|감소)/i,
 ];
 const JUNK_MOD = /^결속됨|시야 반경|Light Radius|투사체 사거리|능력치 요구사항/;
@@ -215,8 +215,8 @@ export function matchesFilters(
   filters: StatFilter[],
 ): boolean {
   return filters.every((f) => {
+    if (!(f.key in offs)) return false;   // 존재 판정은 값이 아니라 열쇠로 — 값 없는 옵션이 '죽은 필터'가 됐다
     const v = offs[f.key] || 0;
-    if (v <= 0) return false;
     if (f.min != null && v < f.min) return false;
     if (f.max != null && v > f.max) return false;
     return true;
@@ -290,7 +290,7 @@ export function rowsFromSnapshot(
   const fresh: RichRow[] = [];
   const all: RichRow[] = [];
   for (const b of snap.bows ?? []) {
-    if ((b.rarity ?? "Rare") !== "Rare") continue;
+    if ((b.rarity || "Rare") !== "Rare") continue;   // 빈 문자열도 Rare 로 — 사이트·serve.py 와 같은 규칙(?? 는 이식 오류)
     const r = rates[b.cur ?? ""] ?? 0;
     const price = numOr0(b.price);
     if (r <= 0 || price <= 0) continue;

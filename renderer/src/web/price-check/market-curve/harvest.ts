@@ -5,7 +5,7 @@
 // 어긋나면 24h 합집합의 지문(fingerprint) 중복 제거가 빗나간다.
 import { ParsedItem } from "@/parser";
 import { ItemCategory } from "@/parser/meta";
-import { AppConfig } from "@/web/Config";
+import { poeWebApi } from "@/web/Config";
 
 // 수집 대상 판정에 필요한 검색 문맥 — 요청마다 명시로 넘긴다(전역 상태 금지).
 // 전역 ctx 를 async 응답 시점에 읽으면, 그 사이 다른 검색이 ctx 를 덮어써
@@ -36,8 +36,8 @@ export function harvestCtxOf(item: ParsedItem, league: string): HarvestCtx {
 // Cloudflare Worker 수합 엔드포인트 — 비어 있으면 수집 기능 전체가 꺼진다
 export const HARVEST_URL = "https://poe2-bow-harvest.skekdi4561.workers.dev";
 
-// 감정소가 신뢰하는 실거래 화폐 넷 — serve.py TRADE_CURRENCIES 와 같아야 한다
-const TRADE_CURRENCIES = new Set(["exalted", "chaos", "divine", "annul"]);
+// 감정소가 가격으로 받는 화폐 — serve.py PRICE_CURRENCIES 와 같아야 한다(미러 포함: 시장 최상위가 미러 가격)
+const TRADE_CURRENCIES = new Set(["exalted", "chaos", "divine", "annul", "mirror"]);
 const MOD_KEYS = [
   "implicitMods",
   "explicitMods",
@@ -70,7 +70,8 @@ function isKakaoRealm(): boolean {
   // 수집기는 도전 리그(Runes of Aldur)를 뜨고 있어서, 스탠다드 매물이 도전 리그
   // 곡선에 섞여 들어갔다(같은 DPS 가 전혀 다른 가격이 된다). 리그는 행에 실어 보내고
   // **수집기가 자기 리그와 대조해 거른다** — 그래야 리그가 바뀌어도 앱 수정이 필요 없다.
-  return AppConfig().language === "ko";
+  // UI 언어가 아니라 **실제 질의 호스트**를 본다 — ko + "선호 거래 사이트=www" 면 국제 서버 응답이다
+  return poeWebApi() === "poe.kakaogames.com";
 }
 
 function toNumber(s: unknown): number {

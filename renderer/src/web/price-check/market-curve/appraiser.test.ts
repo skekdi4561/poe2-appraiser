@@ -16,7 +16,7 @@ describe("marketBoard 무기별 캐시 격리", () => {
     const now = Date.now();
     const mk = (pdps: number) => ({ rarity: "Rare", cur: "exalted", price: 5, t: now, pdps, edps: 0 });
     const bySuffix: Record<string, unknown> = {
-      "https://skekdi4561.github.io/poe2-bow/latest.json": { taken_at: now, rates: {}, bows: [mk(100), mk(200)] },
+      "https://skekdi4561.github.io/poe2-bow/latest.json": { taken_at: now, rates: {}, bows: [mk(100), mk(200), { ...mk(150), cur: "mirror", price: 1 }] },
       "https://skekdi4561.github.io/poe2-bow/latest.crossbow.json": { taken_at: now, rates: {}, bows: [mk(300), mk(400)] },
     };
     const calls: string[] = [];
@@ -31,6 +31,8 @@ describe("marketBoard 무기별 캐시 격리", () => {
       const bow2 = await marketBoard(""); // 같은 무기 재요청 — 캐시에서, 새 fetch 없음
       // 각 무기가 자기 데이터만 봄(섞이면 최고 DPS 가 어긋난다)
       expect(Math.max(...bow!.rows.map((r) => r.pdps))).toBe(200);
+      // rates 에 mirror 가 없어도 기본 환율로 살아남는다 — 0 ex 가 되면 최전선을 '공짜'로 점령한다
+      expect(bow!.rows.some((r) => r.p === 2_000_000)).toBe(true);
       expect(Math.max(...xbow!.rows.map((r) => r.pdps))).toBe(400);
       expect(Math.max(...bow2!.rows.map((r) => r.pdps))).toBe(200);
       // fetch 는 무기마다 한 번씩만(bow2 는 캐시 히트)

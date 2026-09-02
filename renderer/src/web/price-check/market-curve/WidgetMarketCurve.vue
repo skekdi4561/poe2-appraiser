@@ -1,5 +1,5 @@
 <template>
-  <Widget :config="config" move-handles="center" :inline-edit="false">
+  <Widget :config="config" move-handles="center" :removable="false" :inline-edit="false">
     <div
       class="widget-default-style p-5 text-gray-100 rounded-lg"
       style="width: 48rem"
@@ -300,7 +300,7 @@
         </div>
 
         <div class="text-sm text-gray-500 mt-3">
-          희귀 활 즉시구매 매물 기준 · 24시간 이내 수집분 · 가격축 로그 스케일
+          희귀 {{ weaponName }} 즉시구매 매물 기준 · 24시간 이내 수집분 · 가격축 로그 스케일
         </div>
       </template>
     </div>
@@ -608,8 +608,11 @@ export default defineComponent({
       ctx.fillStyle = "#9ca3af";
       ctx.textAlign = "right";
       ctx.lineWidth = 1;
-      for (let k = Math.ceil(lo); k <= Math.floor(hi); k++) {
-        const p = Math.pow(10, k);
+      const ticks: number[] = [];
+      for (let k = Math.ceil(lo); k <= Math.floor(hi); k++) ticks.push(Math.pow(10, k));
+      // 가격 폭이 한 자릿수(decade) 안이면 10^k 눈금이 0~1개라 축이 빈다 — 양 끝값으로 대신 표시
+      if (ticks.length < 2) ticks.splice(0, ticks.length, f[0].p, f[f.length - 1].p);
+      for (const p of ticks) {
         const y = Y(p);
         ctx.beginPath();
         ctx.moveTo(PAD.l, y);
