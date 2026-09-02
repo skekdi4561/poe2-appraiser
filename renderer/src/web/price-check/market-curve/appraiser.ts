@@ -33,10 +33,10 @@ interface SnapshotBow {
 }
 export interface TrendPoint {
   t: number;
-  floors: Record<string, number>; // 앵커 DPS(문자열) → 그때 최저가(엑잘)
+  floors: Record<string, number>; // 앵커(문자열) → 그때 최저가(엑잘). "top" = TOP100 진입 최저가
 }
 export interface Trend {
-  anchors: number[];
+  anchors: (number | string)[]; // 숫자 = "DPS ≥ a 최저가", "top" = TOP100 진입 최저가(수집기 기본)
   points: TrendPoint[];
 }
 interface Snapshot {

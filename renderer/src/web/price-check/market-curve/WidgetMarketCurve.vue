@@ -267,7 +267,11 @@
               style="font-size: 12px; letter-spacing: 0.05em"
               >가격 추세 — {{ trendDays }}일간</span
             >
-            <div class="flex bg-gray-900 rounded p-0.5 ml-1">
+            <!-- 앵커가 하나(수집기 기본 "top")면 고를 게 없으니 라벨만 -->
+            <span v-if="trendAnchors.length === 1" class="text-gray-300 text-sm ml-1">{{
+              anchorLabel(trendAnchors[0])
+            }}</span>
+            <div v-else class="flex bg-gray-900 rounded p-0.5 ml-1">
               <button
                 v-for="a in trendAnchors"
                 :key="a"
@@ -279,7 +283,7 @@
                     : 'text-gray-400 hover:text-gray-200'
                 "
               >
-                DPS {{ a }}+
+                {{ anchorLabel(a) }}
               </button>
             </div>
             <span
@@ -746,9 +750,9 @@ export default defineComponent({
     );
 
     // ---------- 가격 추세 ----------
-    const trendAnchor = ref<number | null>(null);
+    const trendAnchor = ref<number | string | null>(null);
     // 데이터가 실제로 있는 앵커만 (시계열 점 2개 이상)
-    const trendAnchors = computed<number[]>(() => {
+    const trendAnchors = computed<(number | string)[]>(() => {
       const tr = board.value?.trend;
       if (!tr) return [];
       return tr.anchors.filter(
@@ -759,6 +763,8 @@ export default defineComponent({
       if (list.length && (trendAnchor.value == null || !list.includes(trendAnchor.value)))
         trendAnchor.value = list[Math.floor(list.length / 2)] ?? list[0]; // 가운데(중간 DPS) 기본
     });
+    // "top" = TOP100 진입 최저가(수집기 기본, 한 선). 숫자 앵커는 옛 스냅샷 호환
+    const anchorLabel = (a: number | string) => (a === "top" ? "TOP100 진입 최저가" : `DPS ${a}+`);
     // 선택 앵커의 (시각, 가격) 시계열
     const trendSeries = computed<{ t: number; p: number }[]>(() => {
       const tr = board.value?.trend;
@@ -847,6 +853,7 @@ export default defineComponent({
     return {
       trendAnchor,
       trendAnchors,
+      anchorLabel,
       trendDays,
       trendChange,
       trendCanvasEl,
