@@ -89,11 +89,13 @@ export class OverlayWindow {
   }
 
   assertOverlayActive = () => {
-    if (!this.isInteractable) {
-      this.isInteractable = true;
-      OverlayController.activateOverlay();
-      this.poeWindow.isActive = false;
-    }
+    // 자기 상태(isInteractable)를 믿고 건너뛰지 않는다 — OS 포커스 탈취가 한 번 실패하면 게임은
+    // 계속 활성이라 active-change 가 안 오고, 이 플래그만 "활성"으로 어긋난 채 남는다. 그 상태에서
+    // 다음 요청을 건너뛰면 ESC 가 게임으로 가서 위젯이 안 닫힌다(F7 위젯에서 실측, 간헐).
+    // activateOverlay 는 이미 활성일 때 다시 불러도 해가 없다.
+    this.isInteractable = true;
+    OverlayController.activateOverlay();
+    this.poeWindow.isActive = false;
   };
 
   assertGameActive = () => {

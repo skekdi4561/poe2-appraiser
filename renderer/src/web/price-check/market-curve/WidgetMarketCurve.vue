@@ -387,11 +387,9 @@ export default defineComponent({
       if (e.target !== "market-curve") return;
       if (props.config.wmWants === "hide") {
         wm.show(props.config.wmId);
+        shownAt = Date.now();
         // 토글 키로 열면 오버레이가 클릭 통과 상태라 조작이 안 된다 — 입력 포커스를 요청
-        Host.sendEvent({
-          name: "OVERLAY->MAIN::focus-overlay",
-          payload: undefined,
-        });
+        requestOverlayFocus(0);
       } else {
         wm.hide(props.config.wmId);
         Host.sendEvent({
@@ -407,15 +405,24 @@ export default defineComponent({
     // 교체 때문에 유실될 수 있어 실제로 안 먹었다(실측: config.json 에 wmFlags=[] 유지).
     // 그래서 설정에 기대지 않고 **포커스 변화를 직접 듣는다** — ESC 는 게임에 포커스를
     // 돌려주므로 focus-change{overlay:false} 가 온다.
-    // 열자마자 닫히는 사고를 막으려고, 한 번이라도 overlay:true 를 본 뒤에만 닫는다
-    // (F7 로 열 때 아직 포커스를 못 받은 순간의 이벤트에 반응하지 않게).
-    let sawOverlayFocus = false;
+    // 예전엔 "overlay:true 를 한 번 본 뒤에만 닫기"로 열자마자 닫히는 사고를 막았는데, 그 플래그가
+    // 포커스 탈취 실패·이벤트 누락으로 false 인 채 남으면 ESC 가 영영 안 먹었다(실측, 간헐).
+    // 지금은 ①닫기 판정은 시간 유예(연 직후 300ms 안의 overlay:false 는 무시)로 바꾸고,
+    // ②포커스 확인(overlay:true)이 300ms 안에 안 오면 두 번까지 다시 요청한다 — 메인은 요청을
+    // 자기 상태와 무관하게 항상 실행하므로(OverlayWindow.assertOverlayActive) 어긋난 상태가 풀린다.
+    let shownAt = 0;
+    let overlayFocused = false;
+    function requestOverlayFocus(attempt: number) {
+      Host.sendEvent({ name: "OVERLAY->MAIN::focus-overlay", payload: undefined });
+      if (attempt >= 2) return;
+      setTimeout(() => {
+        if (props.config.wmWants === "show" && !overlayFocused) requestOverlayFocus(attempt + 1);
+      }, 300);
+    }
     Host.onEvent("MAIN->OVERLAY::focus-change", (state) => {
-      if (state.overlay) {
-        sawOverlayFocus = true;
-      } else if (sawOverlayFocus && props.config.wmWants === "show") {
-        sawOverlayFocus = false;
-        wm.hide(props.config.wmId);
+      overlayFocused = state.overlay;
+      if (!state.overlay && props.config.wmWants === "show" && Date.now() - shownAt > 300) {
+        wm.hide(props.config.wmId); // ESC → 메인이 게임에 포커스를 돌려주며 overlay:false 를 보낸다
       }
     });
 
