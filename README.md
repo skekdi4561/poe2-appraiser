@@ -4,7 +4,7 @@
 카카오(한국) 서버 기준이며, [Exiled Exchange 2](https://github.com/Kvan7/Exiled-Exchange-2)
 (Awakened PoE Trade 의 POE2 포크, MIT)를 기반으로 **시장 곡선 판정** 기능을 얹은 포크입니다.
 
-- 공격 무기(활·쇠뇌·한손철퇴·양손철퇴·창·쿼터스태프) 가격 체크 시
+- 공격 무기(활·쇠뇌·한손철퇴·양손철퇴·창·육척봉) 가격 체크 시
   "이 DPS 시장 최저가 / 한 계단 위 가격"을 즉시 판정
 - `F7` — 무기별 시장 곡선 위젯(DPS 대비 가격 최전선, 옵션 필터, 가격 추세)
 - 데이터는 [공격 무기 시세 감정소](https://skekdi4561.github.io/poe2-bow/) 가

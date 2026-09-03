@@ -347,7 +347,7 @@ const WEAPONS: { suffix: string; label: string }[] = [
   { suffix: "onemace", label: "한손 철퇴" },
   { suffix: "twomace", label: "양손 철퇴" },
   { suffix: "spear", label: "창" },
-  { suffix: "warstaff", label: "쿼터스태프" },
+  { suffix: "warstaff", label: "육척봉" },
 ];
 
 export default defineComponent({
