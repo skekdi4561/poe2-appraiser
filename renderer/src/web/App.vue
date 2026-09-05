@@ -17,7 +17,7 @@ import OverlayWindow from "./overlay/OverlayWindow.vue";
 @tailwind utilities;
 
 .table-stripped tbody tr:nth-child(odd) {
-  background: #353f52;
+  background: #204743;
 }
 
 #app {

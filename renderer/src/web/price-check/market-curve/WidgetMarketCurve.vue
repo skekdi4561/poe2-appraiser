@@ -617,7 +617,7 @@ export default defineComponent({
       const f = front.value;
       if (f.length < 2) {
         chartScale = null;
-        ctx.fillStyle = "#6b7280";
+        ctx.fillStyle = "#5f7875";
         ctx.textAlign = "center";
         ctx.fillText(t(":too_few"), W / 2, H / 2);
         return;
@@ -637,7 +637,7 @@ export default defineComponent({
 
       // 가격 눈금 (10의 거듭제곱)
       ctx.strokeStyle = "rgba(107,114,128,0.2)";
-      ctx.fillStyle = "#9ca3af";
+      ctx.fillStyle = "#93a8a5";
       ctx.textAlign = "right";
       ctx.lineWidth = 1;
       const ticks = priceTicks(lo, hi, f[0].p, f[f.length - 1].p);
@@ -732,7 +732,7 @@ export default defineComponent({
           ctx.beginPath();
           ctx.arc(X(best.value.d), Y(best.value.p), 6, 0, Math.PI * 2);
           ctx.fill();
-          ctx.strokeStyle = "#0f172a";
+          ctx.strokeStyle = "#001f1c";
           ctx.lineWidth = 1.5;
           ctx.stroke();
         }
@@ -840,7 +840,7 @@ export default defineComponent({
         H - P.b - ((Math.log10(p) - lo) / (hi - lo || 1)) * (H - P.t - P.b);
       // 가격 눈금(양끝)
       ctx.font = "11px sans-serif";
-      ctx.fillStyle = "#9ca3af";
+      ctx.fillStyle = "#93a8a5";
       ctx.textAlign = "right";
       ctx.fillText(formatEx(Math.pow(10, hi), board.value.rates), P.l - 6, P.t + 8);
       ctx.fillText(formatEx(Math.pow(10, lo), board.value.rates), P.l - 6, H - P.b);

@@ -106,7 +106,7 @@
     <div class="italic text-gray-500 mb-4">
       {{ t(":client_log_explain") }}
     </div>
-    <div class="mb-4" :class="{ 'p-2 bg-slate-800 rounded': enableAlphas }">
+    <div class="mb-4" :class="{ 'p-2 bg-gray-800 rounded': enableAlphas }">
       <ui-checkbox class="mb-4" v-model="enableAlphas">{{
         t(":enable_alphas")
       }}</ui-checkbox>
