@@ -14,11 +14,13 @@
         <option value="fr">Français</option>
       </select>
     </div>
-    <div class="mb-4" v-if="language !== 'en'">
+    <div class="mb-4">
       <div class="flex-1 mb-1">{{ t(":preferred_trade_site") }}</div>
       <select v-model="preferredTradeSite" class="p-1 rounded bg-gray-700 w-24">
         <option value="default">{{ tradeUrl }}</option>
         <option value="www">www.pathofexile.com</option>
+        <!-- 영어 클라이언트로 카카오 서버를 하는 경우 — 언어와 거래소를 따로 고른다 -->
+        <option value="kakao">poe.kakaogames.com</option>
       </select>
     </div>
     <div class="mb-4" v-if="language === 'cmn-Hant'">

@@ -34,6 +34,12 @@
       >
         ⚠ {{ t(":stale_warn") }}
       </div>
+      <div
+        v-if="otherRealm"
+        class="mb-3 rounded bg-sky-900/40 border border-sky-700 px-3 py-1.5 text-sm text-sky-200"
+      >
+        {{ t(":realm_note") }}
+      </div>
 
       <!-- 통화 환율 (엑잘 기준) — 이미 수집된 rates 를 그대로 표시 -->
       <div
@@ -325,6 +331,7 @@ import {
 import Widget from "@/web/overlay/Widget.vue";
 import { useI18nNs } from "@/web/i18n";
 import { statText, initStatText } from "./statText";
+import { poeWebApi } from "@/web/Config";
 import { Host } from "@/web/background/IPC";
 import type { WidgetManager, WidgetSpec } from "@/web/overlay/interfaces";
 import type { MarketCurveWidget } from "@/web/overlay/interfaces";
@@ -382,6 +389,9 @@ export default defineComponent({
     // 화면 문자열은 전부 app_i18n.json 의 market_curve 아래에 있다(ko/en). 다른 언어는
     // 키가 없어 en 으로 대체된다 — 즉 앱 언어 설정을 그대로 따라간다.
     const { t } = useI18nNs("market_curve");
+    // 곡선 데이터는 카카오(한국) 거래소에서만 모은다. 다른 거래소를 쓰는 사람에게는
+    // 아무 말 없이 남의 시장 가격을 보여주는 셈이라, 그때만 한 줄 알린다.
+    const otherRealm = computed(() => poeWebApi() !== "poe.kakaogames.com");
     void initStatText(); // 옵션 이름을 앱 언어로 보여주기 위한 표(한국어면 아무것도 안 받는다)
     const wm = inject<WidgetManager>("wm")!;
 
@@ -883,6 +893,7 @@ export default defineComponent({
       trendDays,
       t,
       statText,
+      otherRealm,
       trendChange,
       trendCanvasEl,
       board,

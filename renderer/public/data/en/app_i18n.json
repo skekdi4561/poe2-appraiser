@@ -530,7 +530,7 @@
     "too_few": "Not enough listings for these filters",
     "trend_title": "Price trend — {d} days",
     "trend_change": "vs {d} days ago",
-    "footer": "Rare {w}, instant-buy listings · collected within 24h · log price axis",
+    "footer": "Rare {w}, instant-buy listings · collected within 24h · Korea (kakao) server · log price axis",
     "anchor_top": "Cheapest into the TOP 100",
     "anchor_dps": "DPS {a}+",
     "weapon_bow": "Bow",
@@ -546,6 +546,7 @@
     "cur_annul": "Annul",
     "metric_total": "Total DPS",
     "metric_phys": "Phys",
-    "metric_ele": "Ele"
+    "metric_ele": "Ele",
+    "realm_note": "This curve shows Korean (kakao) server prices — a different market from your trade site."
   }
 }

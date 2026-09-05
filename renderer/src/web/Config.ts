@@ -93,6 +93,12 @@ export function poeWebApi() {
   if (preferredTradeSite === "www") {
     return "www.pathofexile.com";
   }
+  // 게임 클라이언트를 영어로 두고 카카오(한국) 서버를 하는 사람이 있다. 언어는 아이템 글자
+  // 해석에 쓰이므로 en 이어야 하는데, 그러면 거래소가 global 로 넘어가 가격 체크가 엉뚱한
+  // 시장을 본다 — 이 포크는 카카오 대상이라 거래소를 따로 고정할 수 있어야 한다.
+  if (preferredTradeSite === "kakao") {
+    return "poe.kakaogames.com";
+  }
   switch (language) {
     case "en":
       return "www.pathofexile.com";
@@ -143,7 +149,7 @@ export interface Config {
   accountName: string;
   stashScroll: boolean;
   language: "en" | "ru" | "cmn-Hant" | "ko" | "ja" | "de" | "es" | "pt" | "fr";
-  preferredTradeSite: "default" | "www";
+  preferredTradeSite: "default" | "www" | "kakao";
   realm: "pc-ggg" | "pc-garena";
   widgets: widget.Widget[];
   fontSize: number;
