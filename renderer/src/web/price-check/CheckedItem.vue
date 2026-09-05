@@ -1,7 +1,9 @@
 <template>
   <div v-if="noUniqueSelection" class="p-4 layout-column min-h-0">
     <filter-name :filters="itemFilters" :item="item" />
-    <!-- 활 시세 감정소: 활이면 시장 곡선 위치를 먼저 보여준다 (이 포크의 차별화) -->
+    <!-- 시장 곡선은 F7 위젯(WidgetMarketCurve.vue)에만 있다 — 여기 붙던 판정 UI 는
+         2026-08-24 에 삭제됐다. 이 자리에 다시 만들 계획이 없다면 이 주석을 지우지 말 것:
+         README·홍보 글이 "가격 체크 창에 판정이 붙는다"고 잘못 적혀 있던 원인이 이 주석이었다. -->
     <!-- <price-prediction v-if="showPredictedPrice" class="mb-4" :item="item" /> -->
     <!-- <price-trend v-else :item="item" :filters="itemFilters" /> -->
     <price-trend :item="item" :filters="itemFilters" />
