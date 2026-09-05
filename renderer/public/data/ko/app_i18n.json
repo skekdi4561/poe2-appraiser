@@ -414,7 +414,7 @@
     "too_few": "이 조건은 매물이 부족합니다",
     "trend_title": "가격 추세 — {d}일간",
     "trend_change": "{d}일 전 대비",
-    "footer": "희귀 {w} 즉시구매 매물 기준 · 24시간 이내 수집분 · 카카오(한국) 서버 · 가격축 로그 스케일",
+    "footer": "희귀 {w} 즉시구매 매물 기준 · 24시간 이내 수집분 · 가격축 로그 스케일",
     "anchor_top": "TOP100 진입 최저가",
     "anchor_dps": "DPS {a}+",
     "weapon_bow": "활",
@@ -430,7 +430,6 @@
     "cur_annul": "소멸",
     "metric_total": "총 DPS",
     "metric_phys": "물리",
-    "metric_ele": "원소",
-    "realm_note": "이 곡선은 카카오(한국) 서버 시세입니다 — 지금 쓰는 거래소와 다른 시장입니다."
+    "metric_ele": "원소"
   }
 }

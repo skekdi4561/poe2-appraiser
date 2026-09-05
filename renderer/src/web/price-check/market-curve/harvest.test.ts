@@ -139,7 +139,9 @@ import { harvestFetchResults } from "./harvest";
 // specs/vitest.setup.ts 의 전역 스텁에는 poeWebApi 가 없다 — 여기서 realm 판정만 갈아 끼운다
 vi.mock("@/web/Config", () => ({ poeWebApi: vi.fn() }));
 
-describe("harvestFetchResults realm 게이트 (V42 — UI 언어가 아니라 실제 질의 호스트)", () => {
+// 2026-09-05: 카카오/글로벌 거래소에 뜨는 매물이 같다는 것이 확인돼 realm 게이트를 풀었다.
+// 이제는 어느 거래소 응답이든 큐에 넣는다 — 리그 대조와 진위 확인이 뒤에서 거른다.
+describe("harvestFetchResults — 거래소를 가리지 않는다", () => {
   const ctx = { cat: "weapon.bow", league: "L" };
   const res = {
     id: "k1",
@@ -155,10 +157,15 @@ describe("harvestFetchResults realm 게이트 (V42 — UI 언어가 아니라 �
     vi.runAllTimers(); // 5초 flush 타이머를 비워 다음 테스트로 새지 않게
     vi.useRealTimers();
   });
-  it("국제 서버(www) 응답은 큐에 넣지 않는다 — ko + '선호 거래 사이트=www' 오염 방지", () => {
+  it("국제 서버(www) 응답도 큐에 넣는다", () => {
     vi.mocked(poeWebApi).mockReturnValue("www.pathofexile.com");
     harvestFetchResults([res], ctx);
-    expect(_queue.size).toBe(0); // 언어로 판정하면 여기서 1 이 된다
+    expect(_queue.size).toBe(1);
+  });
+  it("무기가 아니면(cat 없음) 넣지 않는다 — 곡선이 무기별이라 분류 못 하면 쓸모없다", () => {
+    vi.mocked(poeWebApi).mockReturnValue("poe.kakaogames.com");
+    harvestFetchResults([res], { cat: null, league: "L" });
+    expect(_queue.size).toBe(0);
   });
   it("카카오 거래소 응답은 큐에 넣는다", () => {
     vi.mocked(poeWebApi).mockReturnValue("poe.kakaogames.com");

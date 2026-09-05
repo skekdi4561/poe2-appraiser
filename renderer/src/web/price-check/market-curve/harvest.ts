@@ -67,15 +67,16 @@ interface HarvestRow {
   cat: string; // 무기 종류 — 곡선이 무기별로 갈리므로 필수
 }
 
-function isKakaoRealm(): boolean {
-  // 감정소는 카카오(한국) 거래소만 다룬다 — 다른 realm 은 시장 자체가 다르다.
-  // ⚠️ 리그는 여기서 걸지 않는다. 예전에는 `league === "Standard"` 를 박아뒀는데
-  // 수집기는 도전 리그(Runes of Aldur)를 뜨고 있어서, 스탠다드 매물이 도전 리그
-  // 곡선에 섞여 들어갔다(같은 DPS 가 전혀 다른 가격이 된다). 리그는 행에 실어 보내고
-  // **수집기가 자기 리그와 대조해 거른다** — 그래야 리그가 바뀌어도 앱 수정이 필요 없다.
-  // UI 언어가 아니라 **실제 질의 호스트**를 본다 — ko + "선호 거래 사이트=www" 면 국제 서버 응답이다
-  return poeWebApi() === "poe.kakaogames.com";
-}
+// 리그는 여기서 걸지 않는다. 예전에는 `league === "Standard"` 를 박아뒀는데 수집기는
+// 도전 리그를 뜨고 있어서 스탠다드 매물이 도전 리그 곡선에 섞였다(같은 DPS 가 전혀 다른
+// 가격이 된다). 리그는 행에 실어 보내고 **수집기가 자기 리그와 대조해 거른다** — 그래야
+// 리그가 바뀌어도 앱 수정이 필요 없다.
+
+// 2026-09-05: 예전에는 카카오 거래소 응답만 보냈다(realm 이 다르면 시장도 다르다고 봤다).
+// 실제로는 카카오와 글로벌 거래소에 뜨는 매물이 같다는 것이 확인돼(사용자 실사용 확인) 게이트를
+// 풀었다 — 글로벌 이용자의 가격 체크도 표본이 된다. 전제가 틀렸다면 수집기 콘솔의
+// "진위 미확인" 수가 뛴다: 최전선을 바꿀 만한 행은 카카오 거래소에 실재하는지 확인한 뒤에만
+// 올라가므로, 남의 시장 매물이면 그 확인에서 떨어진다.
 
 function toNumber(s: unknown): number {
   const m = String(s ?? "").replace(/,/g, "").match(/[\d.]+/);
@@ -186,7 +187,7 @@ export function _flush() {
 }
 
 export function harvestFetchResults(results: unknown[], ctx: HarvestCtx) {
-  if (!HARVEST_URL || !ctx.cat || !isKakaoRealm()) return;
+  if (!HARVEST_URL || !ctx.cat) return;
   for (const res of results) {
     const row = normalizeResult(res, ctx.league, ctx.cat);
     if (row?.id) _queue.set(row.id, row);
