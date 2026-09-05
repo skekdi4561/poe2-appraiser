@@ -20,6 +20,12 @@ const DEFAULT_RATES: Record<string, number> = {
   annul: 279,
   mirror: 2_000_000,
 };
+// 미러만 절대값을 안 쓴다. 2,000,000 엑잘은 divine 이 300 엑잘이던 리그의 실측이라
+// 리그가 바뀌면 그대로 틀린다(이 리그 divine 은 65.6 — 절대값이면 4.6배 부풀린다).
+// 미러는 시장에서 디바인의 배수로 매겨지고 디바인은 수집기가 매 사이클 실측하므로,
+// 디바인 기준 배수로 두면 리그가 바뀌어도 같이 따라간다.
+// serve.py MIRROR_IN_DIVINE / index.html MIRROR_IN_DIVINE 과 같은 값.
+const MIRROR_IN_DIVINE = 6500;
 
 interface SnapshotBow {
   pdps?: number;
@@ -93,7 +99,9 @@ async function fetchSnapshot(suffix = ""): Promise<Snapshot | null> {
   if (pending) return pending;
   const p = (async () => {
     try {
-      const r = await fetch(snapshotUrl(suffix), { signal: AbortSignal.timeout(15_000) });   // 멎은 응답에 모든 load() 가 묶이지 않게
+      const r = await fetch(snapshotUrl(suffix), {
+        signal: AbortSignal.timeout(15_000),
+      }); // 멎은 응답에 모든 load() 가 묶이지 않게
       const data = (await r.json()) as Snapshot;
       cache.set(suffix, { at: Date.now(), data });
       return data;
@@ -131,6 +139,9 @@ function parseRates(snap: Snapshot): {
     }
     rates[c] = r!;
   }
+  // 미러 기본값만 디바인 배수로 갈아 끼운다(위 주석). 실측이 있으면 위 루프가 이미 그걸 넣었다.
+  if (fallbackCurs.has("mirror"))
+    rates.mirror = rates.divine * MIRROR_IN_DIVINE;
   return { rates, fallbackCurs };
 }
 
@@ -140,7 +151,7 @@ function parseRates(snap: Snapshot): {
 // 같은 무관 옵션까지 삼키므로 index.html 과 같은 엄격한 패턴을 유지할 것.
 const COUNTED = [
   /increased Physical Damage|^물리 피해 [\d.]+% 증가/i,
-  /^Adds \d|^(?:\S+ )?피해 \d+~\d+ 추가/i,   // 접두 조건('감전된 적에게 …')이 붙은 추가 피해는 거래소 DPS 밖
+  /^Adds \d|^(?:\S+ )?피해 \d+~\d+ 추가/i, // 접두 조건('감전된 적에게 …')이 붙은 추가 피해는 거래소 DPS 밖
   /increased Attack Speed|reduced Attack Speed|^공격 속도 [\d.]+% (증가|감소)/i,
 ];
 const JUNK_MOD = /^결속됨|시야 반경|Light Radius|투사체 사거리|능력치 요구사항/;
@@ -162,7 +173,8 @@ const modVal = (m: string) => {
   const n = String(m).match(/[\d.]+/);
   return n ? +n[0] : 0;
 };
-export const isOffDps = (m: string) => !COUNTED.some((re) => re.test(cleanMod(m)));
+export const isOffDps = (m: string) =>
+  !COUNTED.some((re) => re.test(cleanMod(m)));
 
 // 활 하나의 { 옵션 열쇠: 값 } — 같은 열쇠가 여러 번이면 큰 값
 function offMods(mods: string[]): Record<string, number> {
@@ -215,7 +227,7 @@ export function matchesFilters(
   filters: StatFilter[],
 ): boolean {
   return filters.every((f) => {
-    if (!(f.key in offs)) return false;   // 존재 판정은 값이 아니라 열쇠로 — 값 없는 옵션이 '죽은 필터'가 됐다
+    if (!(f.key in offs)) return false; // 존재 판정은 값이 아니라 열쇠로 — 값 없는 옵션이 '죽은 필터'가 됐다
     const v = offs[f.key] || 0;
     if (f.min != null && v < f.min) return false;
     if (f.max != null && v > f.max) return false;
@@ -231,7 +243,12 @@ export function metricRows(
 ): Row[] {
   return rows
     .map((r) => ({
-      d: metric === "phys" ? r.pdps : metric === "ele" ? r.edps : r.pdps + r.edps,
+      d:
+        metric === "phys"
+          ? r.pdps
+          : metric === "ele"
+            ? r.edps
+            : r.pdps + r.edps,
       p: r.p,
       t: r.t,
     }))
@@ -274,9 +291,15 @@ export function formatEx(vEx: number, rates: Record<string, number>): string {
 
 // 가격축 눈금 — lo/hi 는 log10 가격, first/last 는 최전선 양 끝 가격(엑잘).
 // 10 의 거듭제곱 눈금이 2개 미만(가격 폭이 한 자릿수 안)이면 축이 비므로 양 끝값으로 대신한다.
-export function priceTicks(lo: number, hi: number, first: number, last: number): number[] {
+export function priceTicks(
+  lo: number,
+  hi: number,
+  first: number,
+  last: number,
+): number[] {
   const ticks: number[] = [];
-  for (let k = Math.ceil(lo); k <= Math.floor(hi); k++) ticks.push(Math.pow(10, k));
+  for (let k = Math.ceil(lo); k <= Math.floor(hi); k++)
+    ticks.push(Math.pow(10, k));
   return ticks.length < 2 ? [first, last] : ticks;
 }
 
@@ -298,7 +321,7 @@ export function rowsFromSnapshot(
   const fresh: RichRow[] = [];
   const all: RichRow[] = [];
   for (const b of snap.bows ?? []) {
-    if ((b.rarity || "Rare") !== "Rare") continue;   // 빈 문자열도 Rare 로 — 사이트·serve.py 와 같은 규칙(?? 는 이식 오류)
+    if ((b.rarity || "Rare") !== "Rare") continue; // 빈 문자열도 Rare 로 — 사이트·serve.py 와 같은 규칙(?? 는 이식 오류)
     const r = rates[b.cur ?? ""] ?? 0;
     const price = numOr0(b.price);
     if (r <= 0 || price <= 0) continue;
