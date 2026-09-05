@@ -27,6 +27,9 @@ const COLLECTED_WEAPONS = new Map<ItemCategory, string>([
   [ItemCategory.TwoHandedMace, "weapon.twomace"],
   [ItemCategory.Spear, "weapon.spear"],
   [ItemCategory.Warstaff, "weapon.warstaff"],
+  // 부적은 오프핸드 아이콘이지만 마셜(양손 근접) 무기다 — meta.ts 의 WEAPON_TWO_HANDED_MELEE
+  // 에 들어 있고 거래 id 도 weapon.talisman 이다(2026-09-05 추가).
+  [ItemCategory.Talisman, "weapon.talisman"],
 ]);
 
 export function harvestCtxOf(item: ParsedItem, league: string): HarvestCtx {

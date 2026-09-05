@@ -348,6 +348,7 @@ const WEAPONS: { suffix: string; label: string }[] = [
   { suffix: "twomace", label: "양손 철퇴" },
   { suffix: "spear", label: "창" },
   { suffix: "warstaff", label: "육척봉" },
+  { suffix: "talisman", label: "부적" },
 ];
 
 export default defineComponent({
@@ -442,7 +443,12 @@ export default defineComponent({
         .filter((c) => typeof r[c.id] === "number" && r[c.id] > 1)
         .map((c) => ({
           ...c,
-          ex: r[c.id].toLocaleString("ko-KR", { maximumFractionDigits: 0 }),
+          // 소수점을 버리면 1.43 이 "1" 로 보여 "1 카오스 = 1 엑잘"이라는 거짓이 된다
+          // (2026-09-05 리그 첫날 실측). 가격 눈금과 같은 규칙: 10 이상은 정수, 아래는 한 자리.
+          ex:
+            r[c.id] >= 10
+              ? Math.round(r[c.id]).toLocaleString("ko-KR")
+              : r[c.id].toFixed(1),
         }));
     });
 
