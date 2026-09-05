@@ -15,12 +15,11 @@
 
 ## 설치
 
-[Releases](https://github.com/skekdi4561/poe2-budget-of-exile/releases) 에서 둘 중 하나를 받습니다.
+[Releases](https://github.com/skekdi4561/poe2-budget-of-exile/releases) 에서 Setup 파일 하나를 받습니다.
 
 | 파일 | 용도 |
 |---|---|
 | `PoE2-BudgetOfExile-Setup-<버전>.exe` | 설치본 — 시작 메뉴 등록, **자동 업데이트** 지원 |
-| `PoE2-BudgetOfExile-Portable-<버전>.exe` | 설치 없이 실행 — 업데이트는 새 파일로 교체 |
 
 **경고가 두 번 뜨는 이유**: 코드 서명 인증서가 없는 개인 제작 프로그램이라 브라우저와
 윈도우가 각각 한 번씩 묻습니다. 바이러스 탐지가 아닙니다.
