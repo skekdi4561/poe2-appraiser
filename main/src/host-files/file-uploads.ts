@@ -3,11 +3,13 @@ import crypto from "crypto";
 import fs from "fs";
 import { app } from "electron";
 import type { Server } from "http";
+import { denyForeignOrigin } from "../origin";
 
 export function addFileUploadRoutes(server: Server) {
   const uploadsPath = path.join(app.getPath("userData"), "apt-data", "files");
 
   server.addListener("request", (req, res) => {
+    if (denyForeignOrigin(req, res)) return;
     if (req.method !== "GET" || !req.url?.startsWith("/uploads/")) return;
 
     // 경로 조작 방어: "/uploads/../../.." 같은 요청이 path.join 으로 uploadsPath 를
@@ -36,6 +38,7 @@ export function addFileUploadRoutes(server: Server) {
   });
 
   server.addListener("request", (req, res) => {
+    if (denyForeignOrigin(req, res)) return;
     if (req.method !== "POST" || !req.url?.startsWith("/uploads/")) return;
 
     let contents = Buffer.alloc(0);

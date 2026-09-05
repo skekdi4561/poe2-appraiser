@@ -1,6 +1,7 @@
 import type { Server } from "http";
 import { app, net } from "electron";
 import type { Logger } from "./RemoteLogger";
+import { denyForeignOrigin } from "./origin";
 
 const PROXY_HOSTS = [
   { host: "www.pathofexile.com", official: true },
@@ -22,6 +23,7 @@ const PROXY_HOSTS = [
 export class HttpProxy {
   constructor(server: Server, logger: Logger) {
     server.addListener("request", (req, res) => {
+      if (denyForeignOrigin(req, res)) return;
       if (!req.url?.startsWith("/proxy/")) return;
       const host = req.url.split("/", 3)[2];
 

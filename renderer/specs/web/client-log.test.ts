@@ -785,7 +785,12 @@ describe("clientLog", () => {
     const { handleLine } = useClientLog();
 
     const filePath = path.join(__dirname, "FullCampaign.txt");
-    const lines = fs.readFileSync(filePath, "utf-8").split("\n");
+    // 실기와 같은 CRLF 파일이다. 본체(GameLogWatcher)는 줄마다 trim() 해서 넘기므로
+    // 여기서도 트림해야 한다 — 안 하면 줄 끝 캐리지리턴 때문에 파서가 한 줄도 못 알아본다.
+    const lines = fs
+      .readFileSync(filePath, "utf-8")
+      .split("\n")
+      .map((line) => line.trim());
 
     for (const line of lines) {
       handleLine(line);

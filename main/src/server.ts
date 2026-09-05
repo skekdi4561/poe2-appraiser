@@ -8,6 +8,7 @@ import { app } from "electron";
 import { IpcEvent, IpcEventPayload, HostState } from "../../ipc/types";
 import { ConfigStore } from "./host-files/ConfigStore";
 import { addFileUploadRoutes } from "./host-files/file-uploads";
+import { denyForeignOrigin, isAllowedOrigin } from "./origin";
 import type { AppUpdater } from "./AppUpdater";
 import type { Logger } from "./RemoteLogger";
 
@@ -19,6 +20,7 @@ addFileUploadRoutes(server);
 
 if (!process.env.VITE_DEV_SERVER_URL) {
   server.addListener("request", (req, res) => {
+    if (denyForeignOrigin(req, res)) return;
     if (
       req.url?.startsWith("/config") ||
       req.url?.startsWith("/uploads") ||
@@ -98,30 +100,8 @@ export const eventPipe = {
   sendEventTo,
 };
 
-// CSWSH(교차 출처 WebSocket 하이재킹) 방어. IPC 소켓은 127.0.0.1 에 있지만 로컬 브라우저
-// 페이지도 loopback 에 접속할 수 있어, 사용자가 방문한 악성 웹페이지가 ws://127.0.0.1:port/events
-// 로 붙어 이벤트를 수신·주입할 수 있다(랜덤 포트가 유일 방어였음). 브라우저는 WS 핸드셰이크에
-// Origin 을 붙이고 페이지가 그걸 위조할 수 없다. 렌더러는 항상 로컬 서버(window.location.host=
-// 127.0.0.1:port)에서 붙으므로 Origin 이 loopback 이다 → 외부 오리진만 거부한다. Origin 이
-// 없는 네이티브 클라이언트는 CSWSH 벡터가 아니므로 통과(로컬 프로세스는 이미 코드 실행 권한이 있다).
-export function isAllowedWsOrigin(origin: string | undefined): boolean {
-  if (!origin) return true;
-  let host: string;
-  try {
-    host = new URL(origin).hostname;
-  } catch {
-    return false; // 브라우저가 보내는 Origin 은 항상 파싱 가능 — 이상하면 거부
-  }
-  return (
-    host === "127.0.0.1" ||
-    host === "localhost" ||
-    host === "::1" ||
-    host === "[::1]"
-  );
-}
-
 server.on("upgrade", (req, socket, head) => {
-  if (req.url !== "/events" || !isAllowedWsOrigin(req.headers.origin)) {
+  if (req.url !== "/events" || !isAllowedOrigin(req.headers.origin)) {
     return req.destroy();
   }
   websocketServer.handleUpgrade(req, socket, head, (ws) => {
@@ -167,6 +147,7 @@ export async function startServer(
   });
 
   server.addListener("request", async (req, res) => {
+    if (denyForeignOrigin(req, res)) return;
     if (req.url === "/config") {
       res.setHeader("content-type", "application/json");
       const resBody: HostState = {

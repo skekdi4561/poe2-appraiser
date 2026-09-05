@@ -40,7 +40,13 @@ describe("useTradeApi", () => {
     });
 
     expect(composableResult.error.value).toBeNull();
-    await composableResult.search({} as ItemFilters, [], {} as ParsedItem);
+    // search() 는 createTradeRequest 보다 먼저 filters.trade.league 를 읽는다 —
+    // 빈 객체를 주면 그 TypeError 가 error 에 담겨 '요청 실패'와 구분이 안 된다.
+    await composableResult.search(
+      { trade: { league: "test" } } as ItemFilters,
+      [],
+      {} as ParsedItem,
+    );
     expect(composableResult.error.value).toBe("test");
     expect(createTradeRequest).toHaveBeenCalled();
   });
