@@ -8,23 +8,23 @@
       <div class="flex items-baseline justify-between mb-3">
         <div class="flex items-baseline gap-2">
           <span class="font-bold text-lg"
-            ><span class="text-yellow-500">{{ weaponName }} 시세</span> 감정소</span
+            ><span class="text-yellow-500">{{ weaponName }}</span> {{ t(":title_rest") }}</span
           >
           <select
             v-model="curWeapon"
             @change="onWeaponChange"
             class="bg-gray-900 rounded px-2 py-0.5 text-gray-200 text-sm"
-            aria-label="무기 종류"
+            :aria-label='t(":weapon_aria")'
           >
             <option v-for="w in WEAPONS" :key="w.suffix" :value="w.suffix">
-              {{ w.label }}
+              {{ t(":" + w.key) }}
             </option>
           </select>
         </div>
         <span v-if="board" class="text-sm text-gray-400"
-          >매물 {{ filtered.length }}/{{ board.sample }}개 ·
-          {{ board.ageHours < 1 ? "방금 전" : Math.round(board.ageHours) + "시간 전"
-          }}<template v-if="board.rateFallback"> · 환율 일부 기본값</template></span
+          >{{ t(":listings", { n: filtered.length, m: board.sample }) }} ·
+          {{ board.ageHours < 1 ? t(":just_now") : t(":hours_ago", { h: Math.round(board.ageHours) })
+          }}<template v-if="board.rateFallback"> · {{ t(":rate_fallback") }}</template></span
         >
       </div>
 
@@ -32,7 +32,7 @@
         v-if="board && board.staleKept"
         class="mb-3 rounded bg-yellow-900/40 border border-yellow-700 px-3 py-1.5 text-sm text-yellow-200"
       >
-        ⚠ 24시간 넘은 낡은 시세입니다 — 수집이 멈췄을 수 있습니다.
+        ⚠ {{ t(":stale_warn") }}
       </div>
 
       <!-- 통화 환율 (엑잘 기준) — 이미 수집된 rates 를 그대로 표시 -->
@@ -42,24 +42,24 @@
         style="font-variant-numeric: tabular-nums"
       >
         <span class="text-gray-500" style="font-size: 12px; letter-spacing: 0.05em"
-          >환율</span
+          >{{ t(":rates") }}</span
         >
         <span v-for="c in rateChips" :key="c.id" class="text-gray-300">
-          1 {{ c.label }}
+          1 {{ t(":" + c.key) }}
           <span class="text-gray-500">=</span>
           <span class="text-yellow-300 font-medium">{{ c.ex }}</span>
-          <span class="text-gray-500">엑잘</span>
+          <span class="text-gray-500">{{ t(":cur_exalted") }}</span>
         </span>
       </div>
 
       <div v-if="loading" class="text-gray-400 py-12 text-center">
-        시세 불러오는 중…
+        {{ t(":loading") }}
       </div>
       <div v-else-if="!board" class="text-gray-400 py-12 text-center">
         {{
           curWeapon
-            ? weaponName + " 시세는 아직 수집되지 않았습니다"
-            : "시세 데이터를 불러오지 못했습니다"
+            ? t(":not_collected", { w: weaponName })
+            : t(":load_failed")
         }}
       </div>
 
@@ -78,10 +78,10 @@
                   : 'text-gray-400 hover:text-gray-200'
               "
             >
-              {{ m.label }}
+              {{ t(":" + m.key) }}
             </button>
           </div>
-          <span class="ml-3 text-gray-400">예산</span>
+          <span class="ml-3 text-gray-400">{{ t(":budget") }}</span>
           <input
             v-model.number="budget"
             type="number"
@@ -95,18 +95,18 @@
             class="bg-gray-900 rounded px-2 py-1 text-gray-200"
           >
             <option v-for="c in currencies" :key="c.id" :value="c.id">
-              {{ c.label }}
+              {{ t(":" + c.key) }}
             </option>
           </select>
           <span v-if="best" class="ml-auto"
-            >이 예산 최고 DPS
+            >{{ t(":best_for_budget") }}
             <span class="font-bold text-teal-400 text-lg">{{
               Math.round(best.d)
             }}</span>
             · {{ formatEx(best.p, board.rates) }}</span
           >
           <span v-else-if="budgetEx > 0" class="ml-auto text-gray-500"
-            >예산 내 매물 없음</span
+            >{{ t(":none_in_budget") }}</span
           >
         </div>
 
@@ -140,7 +140,7 @@
               class="text-gray-500 mb-1.5"
               style="font-size: 12px; letter-spacing: 0.05em"
             >
-              조건 필터 — 옵션을 검색해 추가하고 수치를 직접 입력
+              {{ t(":filter_help") }}
             </div>
 
             <!-- 옵션 검색 -->
@@ -150,7 +150,7 @@
                 @focus="showDrop = true"
                 @blur="hideDropSoon"
                 type="text"
-                placeholder="+ 옵션 검색 (예: 치명타, 생명력, 화살)"
+                :placeholder='t(":filter_placeholder")'
                 class="w-full bg-gray-900 rounded px-3 py-1.5 border border-gray-700 focus:border-gray-500"
               />
               <div
@@ -165,7 +165,7 @@
                 >
                   <span class="truncate">{{ s.key }}</span>
                   <span class="text-gray-500 whitespace-nowrap text-sm"
-                    >{{ s.n }}개 · {{ s.lo }}~{{ s.hi }}</span
+                    >{{ t(":stat_meta", { n: s.n, lo: s.lo, hi: s.hi }) }}</span
                   >
                 </button>
               </div>
@@ -173,7 +173,7 @@
 
             <!-- 추가된 필터 행들 -->
             <div v-if="!filters.length" class="text-gray-600 text-sm py-2">
-              필터 없음 — 전체 매물 기준
+              {{ t(":no_filter") }}
             </div>
             <div
               v-for="(f, i) in filters"
@@ -184,7 +184,7 @@
               <input
                 v-model.number="f.min"
                 type="number"
-                placeholder="최소"
+                :placeholder='t(":min")'
                 class="w-20 bg-gray-950 rounded px-2 py-0.5 text-right border border-gray-700"
                 style="font-variant-numeric: tabular-nums"
               />
@@ -192,14 +192,14 @@
               <input
                 v-model.number="f.max"
                 type="number"
-                placeholder="최대"
+                :placeholder='t(":max")'
                 class="w-20 bg-gray-950 rounded px-2 py-0.5 text-right border border-gray-700"
                 style="font-variant-numeric: tabular-nums"
               />
               <button
                 @click="filters.splice(i, 1)"
                 class="text-gray-500 hover:text-red-400 px-1"
-                title="제거"
+                :title='t(":remove")'
               >
                 ✕
               </button>
@@ -209,7 +209,7 @@
               @click="filters.splice(0)"
               class="text-sm text-gray-400 hover:text-gray-200 underline"
             >
-              전체 해제
+              {{ t(":clear_all") }}
             </button>
           </div>
 
@@ -219,13 +219,13 @@
               <span
                 class="text-gray-500"
                 style="font-size: 12px; letter-spacing: 0.05em"
-                >가격 최전선</span
+                >{{ t(":frontier") }}</span
               >
               <button
                 @click="sortDesc = !sortDesc"
                 class="text-sm text-gray-400 hover:text-gray-200 underline"
               >
-                {{ sortDesc ? "DPS 높은 순" : "DPS 낮은 순" }}
+                {{ sortDesc ? t(":sort_desc") : t(":sort_asc") }}
               </button>
             </div>
             <div
@@ -239,7 +239,7 @@
                 <tbody>
                   <tr v-if="front.length < 2">
                     <td colspan="2" class="text-gray-500 text-center py-3 text-sm">
-                      이 조건은 매물이 부족합니다
+                      {{ t(":too_few") }}
                     </td>
                   </tr>
                   <tr
@@ -265,7 +265,7 @@
             <span
               class="text-gray-500"
               style="font-size: 12px; letter-spacing: 0.05em"
-              >가격 추세 — {{ trendDays }}일간</span
+              >{{ t(":trend_title", { d: trendDays }) }}</span
             >
             <!-- 앵커가 하나(수집기 기본 "top")면 고를 게 없으니 라벨만 -->
             <span v-if="trendAnchors.length === 1" class="text-gray-300 text-sm ml-1">{{
@@ -292,7 +292,7 @@
               :class="trendChange.up ? 'text-red-400' : 'text-teal-400'"
               style="font-variant-numeric: tabular-nums"
             >
-              {{ trendDays }}일 전 대비 {{ trendChange.up ? "▲" : "▼" }}
+              {{ t(":trend_change", { d: trendDays }) }} {{ trendChange.up ? "▲" : "▼" }}
               {{ trendChange.pct }}%
             </span>
           </div>
@@ -304,7 +304,7 @@
         </div>
 
         <div class="text-sm text-gray-500 mt-3">
-          희귀 {{ weaponName }} 즉시구매 매물 기준 · 24시간 이내 수집분 · 가격축 로그 스케일
+          {{ t(":footer", { w: weaponName }) }}
         </div>
       </template>
     </div>
@@ -323,6 +323,7 @@ import {
   nextTick,
 } from "vue";
 import Widget from "@/web/overlay/Widget.vue";
+import { useI18nNs } from "@/web/i18n";
 import { Host } from "@/web/background/IPC";
 import type { WidgetManager, WidgetSpec } from "@/web/overlay/interfaces";
 import type { MarketCurveWidget } from "@/web/overlay/interfaces";
@@ -341,14 +342,14 @@ import {
 
 // 감정소 serve.py ATTACK_WEAPONS / index.html WEAPONS 와 같은 순서·접미사·표시명.
 // 캐스터(완드·셉터·스태프)는 주문 옵션이 값을 정해 DPS 곡선과 무관하므로 제외.
-const WEAPONS: { suffix: string; label: string }[] = [
-  { suffix: "", label: "활" },
-  { suffix: "crossbow", label: "쇠뇌" },
-  { suffix: "onemace", label: "한손 철퇴" },
-  { suffix: "twomace", label: "양손 철퇴" },
-  { suffix: "spear", label: "창" },
-  { suffix: "warstaff", label: "육척봉" },
-  { suffix: "talisman", label: "부적" },
+const WEAPONS: { suffix: string; key: string }[] = [
+  { suffix: "", key: "weapon_bow" },
+  { suffix: "crossbow", key: "weapon_crossbow" },
+  { suffix: "onemace", key: "weapon_onemace" },
+  { suffix: "twomace", key: "weapon_twomace" },
+  { suffix: "spear", key: "weapon_spear" },
+  { suffix: "warstaff", key: "weapon_warstaff" },
+  { suffix: "talisman", key: "weapon_talisman" },
 ];
 
 export default defineComponent({
@@ -377,6 +378,9 @@ export default defineComponent({
     },
   },
   setup(props) {
+    // 화면 문자열은 전부 app_i18n.json 의 market_curve 아래에 있다(ko/en). 다른 언어는
+    // 키가 없어 en 으로 대체된다 — 즉 앱 언어 설정을 그대로 따라간다.
+    const { t } = useI18nNs("market_curve");
     const wm = inject<WidgetManager>("wm")!;
 
     // 브라우저 미리보기 전용 훅 — ?web-preview&show-curve 로 열면 즉시 표시
@@ -435,9 +439,9 @@ export default defineComponent({
       const r = board.value?.rates;
       if (!r) return [];
       const order = [
-        { id: "divine", label: "디바인" },
-        { id: "annul", label: "소멸" },
-        { id: "chaos", label: "카오스" },
+        { id: "divine", key: "cur_divine" },
+        { id: "annul", key: "cur_annul" },
+        { id: "chaos", key: "cur_chaos" },
       ];
       return order
         .filter((c) => typeof r[c.id] === "number" && r[c.id] > 1)
@@ -454,9 +458,9 @@ export default defineComponent({
 
     const metric = ref<"total" | "phys" | "ele">("total");
     const metrics = [
-      { id: "total" as const, label: "총 DPS" },
-      { id: "phys" as const, label: "물리" },
-      { id: "ele" as const, label: "원소" },
+      { id: "total" as const, key: "metric_total" },
+      { id: "phys" as const, key: "metric_phys" },
+      { id: "ele" as const, key: "metric_ele" },
     ];
     const sortDesc = ref(true);
 
@@ -464,10 +468,10 @@ export default defineComponent({
     const budget = ref<number | "">("");
     const budgetCur = ref<"exalted" | "chaos" | "divine" | "annul">("exalted");
     const currencies = [
-      { id: "exalted" as const, label: "엑잘" },
-      { id: "divine" as const, label: "디바인" },
-      { id: "chaos" as const, label: "카오스" },
-      { id: "annul" as const, label: "소멸" },
+      { id: "exalted" as const, key: "cur_exalted" },
+      { id: "divine" as const, key: "cur_divine" },
+      { id: "chaos" as const, key: "cur_chaos" },
+      { id: "annul" as const, key: "cur_annul" },
     ];
     const budgetEx = computed(() => {
       if (typeof budget.value !== "number" || budget.value <= 0) return 0;
@@ -499,7 +503,7 @@ export default defineComponent({
     // 무기 선택 — 활은 접미사 "", 다른 공격무기는 latest.<접미사>.json 을 읽는다.
     const curWeapon = ref("");
     const weaponName = computed(
-      () => WEAPONS.find((w) => w.suffix === curWeapon.value)?.label ?? "활",
+      () => t(":" + (WEAPONS.find((w) => w.suffix === curWeapon.value)?.key ?? "weapon_bow")),
     );
     function onWeaponChange() {
       filters.splice(0); // 이전 무기 기준 옵션 필터는 다른 무기엔 의미가 없다
@@ -605,7 +609,7 @@ export default defineComponent({
         chartScale = null;
         ctx.fillStyle = "#6b7280";
         ctx.textAlign = "center";
-        ctx.fillText("이 조건은 매물이 부족합니다", W / 2, H / 2);
+        ctx.fillText(t(":too_few"), W / 2, H / 2);
         return;
       }
 
@@ -775,7 +779,8 @@ export default defineComponent({
         trendAnchor.value = list[Math.floor(list.length / 2)] ?? list[0]; // 가운데(중간 DPS) 기본
     });
     // "top" = TOP100 진입 최저가(수집기 기본, 한 선). 숫자 앵커는 옛 스냅샷 호환
-    const anchorLabel = (a: number | string) => (a === "top" ? "TOP100 진입 최저가" : `DPS ${a}+`);
+    const anchorLabel = (a: number | string) =>
+      a === "top" ? t(":anchor_top") : t(":anchor_dps", { a });
     // 선택 앵커의 (시각, 가격) 시계열
     const trendSeries = computed<{ t: number; p: number }[]>(() => {
       const tr = board.value?.trend;
@@ -866,6 +871,7 @@ export default defineComponent({
       trendAnchors,
       anchorLabel,
       trendDays,
+      t,
       trendChange,
       trendCanvasEl,
       board,
