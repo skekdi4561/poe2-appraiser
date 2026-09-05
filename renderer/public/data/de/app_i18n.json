@@ -19,7 +19,8 @@
     "release_notes": "Release Notes",
     "report_bug": "Einen Fehler auf GitHub melden",
     "quit": "Beenden",
-    "deprecated": "Dieses Feature ist veraltet und wird in Update {0} entfernt"
+    "deprecated": "Dieses Feature ist veraltet und wird in Update {0} entfernt",
+    "name": "PoE2 Budget of Exile"
   },
   "map.mods.heist": "Heist",
   "map.mods.uber": "T17",
@@ -341,7 +342,7 @@
     "highest_volume": "Höchstes Volumen:"
   },
   "settings": {
-    "title": "Einstellungen - PoE2 시세 감정소",
+    "title": "Einstellungen - PoE2 Budget of Exile",
     "language": "Sprache",
     "private_league": "oder Private Liga",
     "account_name": "Account-Name",

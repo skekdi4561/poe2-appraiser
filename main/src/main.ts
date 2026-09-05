@@ -27,16 +27,23 @@ import fs from "node:fs";
   const userData = path.join(appData, "poe2-sise");
   const legacy = path.join(appData, "poe2-appraiser", "apt-data");
   try {
-    if (!fs.existsSync(path.join(userData, "apt-data")) && fs.existsSync(legacy)) {
+    if (
+      !fs.existsSync(path.join(userData, "apt-data")) &&
+      fs.existsSync(legacy)
+    ) {
       fs.cpSync(legacy, path.join(userData, "apt-data"), { recursive: true });
     }
   } catch (e) {
     console.warn("legacy config copy failed", e);
   }
   app.setPath("userData", userData);
-  // productName 이 User-Agent 토큰이 된다("PoE2시세감정소/0.1.0") — 비ASCII 헤더가 카카오 거래소로
-  // 나가는 것은 검증된 적이 없으니 ASCII 로 바꾼다(원본은 "exiled-exchange-2/버전" 형태였다).
-  app.userAgentFallback = app.userAgentFallback.replace(/PoE2\s?시세\s?감정소/g, "poe2-sise");
+  // productName 이 그대로 User-Agent 토큰이 된다. 이제 ASCII 지만 공백이 있어
+  // ("PoE2 Budget of Exile/0.1.4") 토큰이 셋으로 쪼개진다 — 한 덩어리로 바꾼다.
+  // 옛 한글 productName 패턴도 남겨 둔다(비ASCII 헤더가 카카오 거래소로 나가는 것은
+  // 검증된 적이 없다). 원본은 "exiled-exchange-2/버전" 형태였다.
+  app.userAgentFallback = app.userAgentFallback
+    .replace(/PoE2 Budget of Exile/g, "poe2-budget-of-exile")
+    .replace(/PoE2\s?시세\s?감정소/g, "poe2-budget-of-exile");
 }
 
 if (!app.requestSingleInstanceLock()) {

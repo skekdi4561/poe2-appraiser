@@ -5,7 +5,11 @@ appId: "com.skekdi4561.poe2-sise"
 # (Windows 에서 추출 실패 → rcedit 가 exe 를 반쯤 스탬핑해 즉사 바이너리 생성)가 없다
 toolsets:
   winCodeSign: "1.1.0"
-productName: "PoE2 시세 감정소"   # 표시 이름(설치 화면·시작 메뉴·트레이). 파일명은 아래 artifactName(ASCII)
+# 표시 이름(설치 화면·시작 메뉴·트레이). 값이 하나뿐이라 지역화가 안 되므로 영어 정본을 쓴다 —
+# 한국어 이름 "PoE2 시세 감정소" 는 앱 안 UI(app_i18n 의 app.name)가 담당한다.
+# ⚠️ appId 는 일부러 안 바꿨다: NSIS 업그레이드가 그 값으로 기존 설치를 찾는데, 바꾸면
+# 기존 사용자에게 갈아끼우기가 아니라 **두 번째 설치**가 생긴다.
+productName: "PoE2 Budget of Exile"
 npmRebuild: false
 files:
   - "package.json"
@@ -25,9 +29,9 @@ afterPack: "build/afterPack.js"
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
-  artifactName: "PoE2-SiseGamjeongso-Setup-${version}.${ext}"
+  artifactName: "PoE2-BudgetOfExile-Setup-${version}.${ext}"
 portable:
-  artifactName: "PoE2-SiseGamjeongso-Portable-${version}.${ext}"
+  artifactName: "PoE2-BudgetOfExile-Portable-${version}.${ext}"
 win:
   # 기본 조회 경로는 build/icon.ico 인데 이 포크의 아이콘은 build/icons/icon.ico 에 있어
   # 못 찾고 업스트림 PNG 세트로 떨어졌다 — 그래서 사용자가 내려받는 Setup/Portable exe 가

@@ -18,7 +18,8 @@
     "version": "バージョン {0}",
     "release_notes": "リリースノート",
     "report_bug": "GitHubでバグを報告する",
-    "quit": "終了"
+    "quit": "終了",
+    "name": "PoE2 Budget of Exile"
   },
   "map.mods.heist": "ハイスト",
   "map.mods.uber": "ティア17",
@@ -304,7 +305,7 @@
     "fix_complex_query": "設定で\"Use pseudo mods\"を無効にするか、組み込みブラウザでログインしてください"
   },
   "settings": {
-    "title": "設定 - PoE2 시세 감정소",
+    "title": "設定 - PoE2 Budget of Exile",
     "language": "言語",
     "private_league": "またはプライベートリーグ",
     "account_name": "アカウント名",

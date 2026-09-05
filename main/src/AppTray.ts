@@ -23,7 +23,7 @@ export class AppTray {
     }
 
     this.tray = new Tray(trayImage);
-    this.tray.setToolTip(`PoE2 시세 감정소 v${app.getVersion()}`);
+    this.tray.setToolTip(`PoE2 Budget of Exile v${app.getVersion()}`);
     this.rebuildMenu();
 
     server.onEventAnyClient("CLIENT->MAIN::user-action", ({ action }) => {

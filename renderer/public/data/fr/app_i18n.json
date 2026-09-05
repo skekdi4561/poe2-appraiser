@@ -19,7 +19,8 @@
     "release_notes": "Notes de version",
     "report_bug": "Signaler un bug sur GitHub",
     "quit": "Quitter",
-    "deprecated": "Cette fonctionnalité est obsolète et sera supprimée dans la mise à jour {0}"
+    "deprecated": "Cette fonctionnalité est obsolète et sera supprimée dans la mise à jour {0}",
+    "name": "PoE2 Budget of Exile"
   },
   "map.mods.heist": "Casse",
   "map.mods.uber": "T17",
@@ -346,7 +347,7 @@
     "highest_volume": "Plus grand volume :"
   },
   "settings": {
-    "title": "Paramètres - PoE2 시세 감정소",
+    "title": "Paramètres - PoE2 Budget of Exile",
     "language": "Langue",
     "private_league": "ou Ligue privée",
     "account_name": "Nom du compte",

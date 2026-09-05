@@ -18,7 +18,8 @@
     "version": "Versão {0}",
     "release_notes": "Notas de versão",
     "report_bug": "Reportar um erro no GitHub",
-    "quit": "Sair"
+    "quit": "Sair",
+    "name": "PoE2 Budget of Exile"
   },
   "map.mods.heist": "assalto",
   "map.mods.uber": "T17",
@@ -325,7 +326,7 @@
     "highest_volume": "Maior volume:"
   },
   "settings": {
-    "title": "Configurações - PoE2 시세 감정소",
+    "title": "Configurações - PoE2 Budget of Exile",
     "language": "Idioma",
     "private_league": "ou Liga privada",
     "account_name": "Nome da conta",

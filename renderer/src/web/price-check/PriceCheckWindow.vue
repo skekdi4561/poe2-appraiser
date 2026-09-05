@@ -410,9 +410,7 @@ export default defineComponent({
     );
 
     const leagues = useLeagues();
-    const title = computed(
-      () => leagues.selectedId.value || "PoE2 시세 감정소",
-    );
+    const title = computed(() => leagues.selectedId.value || t("app.name"));
     const stableOrbCost = computed(() =>
       xchgRate.value ? Math.round(xchgRate.value) : null,
     );

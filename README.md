@@ -1,5 +1,8 @@
 # PoE2 시세 감정소 (오버레이)
 
+> 영어권 배포명은 **PoE2 Budget of Exile** 입니다 — 같은 프로그램이고,
+> 앱 언어를 한국어로 두면 화면에는 "시세 감정소"로 나옵니다.
+
 **"이 예산으로 살 수 있는 최고 DPS는?"** — 시장 곡선으로 답하는 Path of Exile 2 오버레이.
 카카오(한국) 서버 기준이며, [Exiled Exchange 2](https://github.com/Kvan7/Exiled-Exchange-2)
 (Awakened PoE Trade 의 POE2 포크, MIT)를 기반으로 **시장 곡선 위젯**을 얹은 포크입니다.
@@ -16,8 +19,8 @@
 
 | 파일 | 용도 |
 |---|---|
-| `PoE2-SiseGamjeongso-Setup-<버전>.exe` | 설치본 — 시작 메뉴 등록, **자동 업데이트** 지원 |
-| `PoE2-SiseGamjeongso-Portable-<버전>.exe` | 설치 없이 실행 — 업데이트는 새 파일로 교체 |
+| `PoE2-BudgetOfExile-Setup-<버전>.exe` | 설치본 — 시작 메뉴 등록, **자동 업데이트** 지원 |
+| `PoE2-BudgetOfExile-Portable-<버전>.exe` | 설치 없이 실행 — 업데이트는 새 파일로 교체 |
 
 **경고가 두 번 뜨는 이유**: 코드 서명 인증서가 없는 개인 제작 프로그램이라 브라우저와
 윈도우가 각각 한 번씩 묻습니다. 바이러스 탐지가 아닙니다.

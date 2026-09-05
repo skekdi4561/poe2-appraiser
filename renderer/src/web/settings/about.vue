@@ -2,7 +2,7 @@
   <div class="p-2 flex flex-col h-full items-center">
     <div class="flex flex-col items-center p-2 mb-4">
       <img class="w-12 h-12" src="/images/jeweler.png" />
-      <p class="text-base">PoE2 시세 감정소</p>
+      <p class="text-base">{{ t("app.name") }}</p>
       <p class="">{{ t("app.version", [version]) }}</p>
       <div class="flex gap-2">
         <a

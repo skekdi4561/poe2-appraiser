@@ -19,7 +19,8 @@
     "release_notes": "Notas de la versión",
     "report_bug": "Reportar un error en GitHub",
     "quit": "Salir",
-    "deprecated": "Esta función está obsoleta y se eliminará en la actualización {0}"
+    "deprecated": "Esta función está obsoleta y se eliminará en la actualización {0}",
+    "name": "PoE2 Budget of Exile"
   },
   "map.mods.uber": "T17",
   "map.mods.outdated": "desactualizado",
@@ -316,7 +317,7 @@
     "results_warn_message": "El sitio de comercio oculta resultados entre {0} y {1} ex"
   },
   "settings": {
-    "title": "Configuración - PoE2 시세 감정소",
+    "title": "Configuración - PoE2 Budget of Exile",
     "language": "Idioma",
     "private_league": "o Liga privada",
     "account_name": "Nombre de cuenta",

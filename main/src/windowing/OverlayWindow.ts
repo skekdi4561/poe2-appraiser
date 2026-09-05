@@ -165,7 +165,9 @@ export class OverlayWindow {
       dialog.showErrorBox(
         "PoE2 window - No access",
         // ----------------------
+        // 이 창은 메인 프로세스라 i18n 이 없다 — 두 언어를 같이 적는다
         "Path of Exile 2 is running with administrator rights.\n" +
+          "Restart PoE2 Budget of Exile as administrator.\n" +
           "\n" +
           "PoE2 시세 감정소를 관리자 권한으로 다시 실행해야 합니다.",
       );

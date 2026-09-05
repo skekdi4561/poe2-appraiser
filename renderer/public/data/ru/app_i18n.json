@@ -37,7 +37,8 @@
     "release_notes": "Список изменений",
     "report_bug": "Сообщить о баге на GitHub",
     "quit": "Выход",
-    "deprecated": "Эта функция устарела и будет удалена в следующем обновлении {0}"
+    "deprecated": "Эта функция устарела и будет удалена в следующем обновлении {0}",
+    "name": "PoE2 Budget of Exile"
   },
   "map.mods.heist": "кража",
   "map.mods.outdated": "устарело",
@@ -320,7 +321,7 @@
     "fix_complex_query": "Отключите \"Use pseudo mods\" в настройках или залогиньтесь во встроенном браузере"
   },
   "settings": {
-    "title": "Настройки - PoE2 시세 감정소",
+    "title": "Настройки - PoE2 Budget of Exile",
     "language": "Язык",
     "private_league": "или Приватная лига",
     "account_name": "Имя учетной записи",

@@ -19,7 +19,8 @@
     "release_notes": "更新記錄",
     "report_bug": "在 GitHub 上報告錯誤",
     "quit": "退出",
-    "deprecated": "此功能已淘汰，將於版本 {0} 更新中移除"
+    "deprecated": "此功能已淘汰，將於版本 {0} 更新中移除",
+    "name": "PoE2 Budget of Exile"
   },
   "map.mods.heist": "劫盜",
   "map.mods.uber": "T17",
@@ -308,7 +309,7 @@
     "fix_complex_query": "請在設定中禁用\"偽屬性\"選項，或通過內置瀏覽器登錄。"
   },
   "settings": {
-    "title": "設置 - 流亡交易所 2",
+    "title": "設置 - PoE2 Budget of Exile",
     "language": "語言",
     "private_league": "或私密聯盟",
     "account_name": "賬戶名稱",
