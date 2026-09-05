@@ -15,7 +15,7 @@
 
 ## 설치
 
-[Releases](https://github.com/skekdi4561/poe2-appraiser/releases) 에서 둘 중 하나를 받습니다.
+[Releases](https://github.com/skekdi4561/poe2-budget-of-exile/releases) 에서 둘 중 하나를 받습니다.
 
 | 파일 | 용도 |
 |---|---|
@@ -49,7 +49,7 @@
 - **F7 이 반응 없음**: 설정 → 오버레이 위젯에서 "시장 곡선" 단축키를 확인하세요.
 - **가격 체크가 다른 서버를 봄**: 설정 → 일반의 언어가 한국어, "선호 거래 사이트"가 기본값인지 확인하세요.
 - **설정 파일 위치**: `%APPDATA%\poe2-sise\apt-data\config.json` (트레이 메뉴에서도 열 수 있습니다).
-- 그 밖의 문제는 [Issues](https://github.com/skekdi4561/poe2-appraiser/issues) 에 남겨 주세요.
+- 그 밖의 문제는 [Issues](https://github.com/skekdi4561/poe2-budget-of-exile/issues) 에 남겨 주세요.
 
 ## 알려진 문제
 

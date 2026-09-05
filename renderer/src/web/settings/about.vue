@@ -7,13 +7,13 @@
       <div class="flex gap-2">
         <a
           class="border-b"
-          href="https://github.com/skekdi4561/poe2-appraiser/releases"
+          href="https://github.com/skekdi4561/poe2-budget-of-exile/releases"
           target="_blank"
           >{{ t("app.release_notes") }}</a
         >
         <a
           class="border-b"
-          href="https://github.com/skekdi4561/poe2-appraiser/issues"
+          href="https://github.com/skekdi4561/poe2-budget-of-exile/issues"
           target="_blank"
           >{{ t("app.report_bug") }}</a
         >
@@ -32,9 +32,9 @@
       <p>
         {{ t("app.contact_me") }} <br /><a
           class="border-b font-sans text-gray-400"
-          href="https://github.com/skekdi4561/poe2-appraiser/issues"
+          href="https://github.com/skekdi4561/poe2-budget-of-exile/issues"
           target="_blank"
-          >github.com/skekdi4561/poe2-appraiser/issues</a
+          >github.com/skekdi4561/poe2-budget-of-exile/issues</a
         >
       </p>
       <p class="text-gray-500 mt-2">
@@ -78,7 +78,7 @@ function checkForUpdates() {
 }
 
 function openDownloadPage() {
-  window.open("https://github.com/skekdi4561/poe2-appraiser/releases");
+  window.open("https://github.com/skekdi4561/poe2-budget-of-exile/releases");
 }
 
 function quitAndInstall() {

@@ -1,7 +1,7 @@
 {
   "name": "poe2-sise",
   "productName": "PoE2 Budget of Exile",
-  "version": "0.1.4",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "node build/script.mjs",
@@ -17,7 +17,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/skekdi4561/poe2-appraiser.git"
+    "url": "https://github.com/skekdi4561/poe2-budget-of-exile.git"
   },
   "main": "dist/main.js",
   "dependencies": {
