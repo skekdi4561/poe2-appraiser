@@ -29,6 +29,10 @@ nsis:
 portable:
   artifactName: "PoE2-SiseGamjeongso-Portable-${version}.${ext}"
 win:
+  # 기본 조회 경로는 build/icon.ico 인데 이 포크의 아이콘은 build/icons/icon.ico 에 있어
+  # 못 찾고 업스트림 PNG 세트로 떨어졌다 — 그래서 사용자가 내려받는 Setup/Portable exe 가
+  # **원작 아이콘**을 달고 나갔다(설치 뒤 앱 exe 만 afterPack 이 우리 아이콘으로 스탬핑).
+  icon: "build/icons/icon.ico"
   # winCodeSign(legacy 7z)의 darwin 심볼릭 링크가 Windows 추출에서 실패해 rcedit 가
   # exe 를 반쯤 스탬핑하다 즉사 바이너리를 만든다 — 편집 단계를 끄고 build/afterPack.js 가
   # rcedit(npm 패키지 동봉 바이너리)로 아이콘·ProductName 을 찍는다. 안 찍으면 바탕화면 바로가기와
