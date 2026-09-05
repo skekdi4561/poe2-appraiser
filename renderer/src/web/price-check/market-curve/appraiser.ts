@@ -152,7 +152,7 @@ const cleanMod = (m: string) =>
     .replace(/\[([^\]|]*)\|([^\]]*)\]/g, "$2")
     .replace(/\[([^\]]*)\]/g, "$1");
 // 숫자를 # 으로 지워 같은 옵션을 같은 열쇠로 묶는다 — 수집기 mod_key 와 글자까지 같아야 한다
-const modKey = (m: string) =>
+export const modKey = (m: string) =>
   cleanMod(m)
     .replace(/[\d.]+/g, "#")
     .replace(/\+\s*#/g, "#")

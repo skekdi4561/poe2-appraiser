@@ -163,7 +163,7 @@
                   @mousedown.prevent="addFilter(s)"
                   class="w-full text-left px-3 py-1.5 hover:bg-gray-800 flex justify-between gap-2"
                 >
-                  <span class="truncate">{{ s.key }}</span>
+                  <span class="truncate">{{ statText(s.key) }}</span>
                   <span class="text-gray-500 whitespace-nowrap text-sm"
                     >{{ t(":stat_meta", { n: s.n, lo: s.lo, hi: s.hi }) }}</span
                   >
@@ -180,7 +180,7 @@
               :key="f.key + i"
               class="flex items-center gap-2 mb-1.5 bg-gray-900 rounded px-2 py-1.5 border border-gray-800"
             >
-              <span class="flex-1 truncate" :title="f.key">{{ f.key }}</span>
+              <span class="flex-1 truncate" :title="statText(f.key)">{{ statText(f.key) }}</span>
               <input
                 v-model.number="f.min"
                 type="number"
@@ -324,6 +324,7 @@ import {
 } from "vue";
 import Widget from "@/web/overlay/Widget.vue";
 import { useI18nNs } from "@/web/i18n";
+import { statText, initStatText } from "./statText";
 import { Host } from "@/web/background/IPC";
 import type { WidgetManager, WidgetSpec } from "@/web/overlay/interfaces";
 import type { MarketCurveWidget } from "@/web/overlay/interfaces";
@@ -381,6 +382,7 @@ export default defineComponent({
     // 화면 문자열은 전부 app_i18n.json 의 market_curve 아래에 있다(ko/en). 다른 언어는
     // 키가 없어 en 으로 대체된다 — 즉 앱 언어 설정을 그대로 따라간다.
     const { t } = useI18nNs("market_curve");
+    void initStatText(); // 옵션 이름을 앱 언어로 보여주기 위한 표(한국어면 아무것도 안 받는다)
     const wm = inject<WidgetManager>("wm")!;
 
     // 브라우저 미리보기 전용 훅 — ?web-preview&show-curve 로 열면 즉시 표시
@@ -492,7 +494,14 @@ export default defineComponent({
       const used = new Set(filters.map((f) => f.key));
       const pool = board.value.stats.filter((s) => !used.has(s.key));
       if (!q) return pool.slice(0, 20); // 비어 있으면 자주 보이는 옵션 순
-      return pool.filter((s) => s.key.toLowerCase().includes(q)).slice(0, 20);
+      // 표시문(현재 언어)으로도 찾게 한다 — 영어 UI 에서 한국어 원문만 뒤지면 아무것도 안 걸린다
+      return pool
+        .filter(
+          (s) =>
+            s.key.toLowerCase().includes(q) ||
+            statText(s.key).toLowerCase().includes(q),
+        )
+        .slice(0, 20);
     });
     function addFilter(s: StatOption) {
       filters.push({ key: s.key, min: null, max: null });
@@ -513,6 +522,7 @@ export default defineComponent({
     async function load() {
       const want = curWeapon.value; // 요청 시점의 무기를 고정
       loading.value = true;
+      void initStatText(); // 설정에서 언어를 바꿨을 수 있다 — 같은 언어면 즉시 반환
       const b = await marketBoard(want); // 10분 캐시(무기별)라 매번 불러도 싸다
       // 느린 fetch 가 도는 사이 사용자가 무기를 바꿨으면 이 결과는 버린다 — 안 그러면
       // A 의 늦은 응답이 B 의 곡선을 덮어써 엉뚱한 무기가 뜬다(무기 전환 경합). 최신 load 가 loading 을 끈다.
@@ -872,6 +882,7 @@ export default defineComponent({
       anchorLabel,
       trendDays,
       t,
+      statText,
       trendChange,
       trendCanvasEl,
       board,
