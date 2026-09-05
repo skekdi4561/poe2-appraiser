@@ -5,7 +5,6 @@
 // 어긋나면 24h 합집합의 지문(fingerprint) 중복 제거가 빗나간다.
 import { ParsedItem } from "@/parser";
 import { ItemCategory } from "@/parser/meta";
-import { poeWebApi } from "@/web/Config";
 
 // 수집 대상 판정에 필요한 검색 문맥 — 요청마다 명시로 넘긴다(전역 상태 금지).
 // 전역 ctx 를 async 응답 시점에 읽으면, 그 사이 다른 검색이 ctx 를 덮어써
